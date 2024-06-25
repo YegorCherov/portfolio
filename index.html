@@ -86,26 +86,50 @@
     </section>
     -->
 
-<!-- ***** About Section ***** -->
     <section class="about" id="about">
-        <div class="row">
-            <h2>About Me</h2>
-            <div class="about__content">
-                <div class="about__text">
-                    <p>
-                        Experienced Unity Developer and Automation’s Developer in Cyber Security with a diverse skillset in game development and other tech related fields like Programming and AI. Skilled in Python, Unity, PowerShell, and Machine Learning.
-                    </p>
-                    <!-- Provide a link to your resume if available -->
-                    <a href="https://github.com/Rozcy/portfolio/raw/main/YegorResumeV2.pdf" class="btn">My Resume</a>
-                </div>
-                <!-- Placeholder for About Photo -->
-                <div class="about__photo-container">
-                    <img class="about__photo" src="./images/yegor.png" alt="Yegor Cherov" />
-                </div>
+      <div class="row">
+        <h2>About Me</h2>
+        <div class="about__content">
+          <div class="about__text">
+            <p>
+              Experienced Unity Developer and Automation Developer in Cyber Security with a diverse skillset in game development and other tech-related fields like Programming and AI. Skilled in Python, Unity, PowerShell, and Machine Learning.
+            </p>
+            <p>
+              My projects showcase a wide range of expertise:
+            </p>
+            <ul>
+              <li>Developed advanced RTS mechanics and controls in Unity for game projects like "EmpireToEnd".</li>
+              <li>Created a procedural terrain generation system demonstrating skills in algorithmic design and optimization.</li>
+              <li>Implemented AI-powered tools such as a Watermark Detector, highlighting proficiency in machine learning and computer vision.</li>
+              <li>Built fullstack applications including a blog site and an AI-powered level designer, showcasing web development skills with React, Node.js, and MongoDB.</li>
+              <li>Designed automation tools for threat intelligence integration and malware analysis, emphasizing my cybersecurity expertise.</li>
+              <li>Developed a comprehensive QA framework, demonstrating skills in quality assurance and test automation.</li>
+            </ul>
+            <p>
+              These projects reflect my ability to tackle complex problems, implement efficient solutions, and adapt to various technologies across different domains of software development.
+            </p>
+          </div>
+          <div class="about__resume">
+            <div class="pdf-preview">
+              <img src="images/resume.png" alt="Resume preview" class="resume-preview-image" id="pdfPreviewImage">
             </div>
+            <div class="resume-container">
+              <a href="#" class="btn btn--resume" id="viewResumeBtn">View Resume</a>
+            </div>
+          </div>
         </div>
+      </div>
     </section>
-  </main>
+    
+    <div id="pdfViewer" class="pdf-viewer">
+      <div class="pdf-content">
+        <iframe id="pdfFrame" src="YegorCherov-SoftwareDeveloper.pdf"></iframe>
+        <button id="closePdfBtn" class="close-btn">&times;</button>
+        <a href="YegorCherov-SoftwareDeveloper.pdf" download class="download-btn">Download PDF</a>
+      </div>
+    </div>
+    </main>
+
 
       <!-- ***** Contact Section ***** -->
     <section class="contact" id="contact">

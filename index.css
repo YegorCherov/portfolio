@@ -608,29 +608,169 @@ body:not(.user-is-tabbing) a:focus {
 
 .about__content {
     display: flex;
-    flex-direction: row-reverse;
+    justify-content: space-between;
+    align-items: flex-start;
+    max-width: 100%;
+    margin: 0 auto;
+}
+
+.about__text {
+    flex: 0 0 70%;
+    padding-right: 2rem;
+    text-align: left;
+}
+
+.about__resume {
+    flex: 0 0 30%;
+    display: flex;
+    flex-direction: column;
     align-items: center;
 }
 
-@media(max-width: 900px) {
+.about__content p, 
+.about__content ul {
+    font-size: 1.6rem;
+    line-height: 1.6;
+    margin-bottom: 1.5rem;
+    text-align: left;
+}
+
+.about__content ul {
+    padding-left: 2rem;
+}
+
+.about__content li {
+    margin-bottom: 0.5rem;
+}
+
+/* PDF Preview Styles */
+.pdf-preview {
+    width: 100%;
+    margin-bottom: 1rem;
+    cursor: pointer;
+}
+
+.resume-preview-image {
+    width: 100%;
+    height: auto;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    transition: opacity 0.3s ease;
+}
+
+.resume-preview-image:hover {
+    opacity: 0.8;
+}
+
+/* Resume Button Styles */
+.resume-container {
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    margin-top: 1rem;
+}
+
+.btn--resume {
+    display: inline-block;
+    padding: 10px 20px;
+    background-color: var(--pink);
+    color: var(--white);
+    text-decoration: none;
+    border-radius: 5px;
+    transition: background-color 0.3s ease, color 0.3s ease;
+    font-size: 1.6rem;
+    border: 1px solid var(--pink);
+}
+
+.btn--resume:hover {
+    background-color: var(--white);
+    color: var(--pink);
+}
+
+/* PDF Viewer Styles */
+.pdf-viewer {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.8);
+    z-index: 1000;
+}
+
+.pdf-content {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 80%;
+    height: 80%;
+    background-color: white;
+    box-shadow: 0 0 20px rgba(0, 0, 0, 0.3);
+}
+
+#pdfFrame {
+    width: 100%;
+    height: 100%;
+    border: none;
+}
+
+.close-btn {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    font-size: 24px;
+    background-color: var(--pink);
+    color: var(--white);
+    border: none;
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
+    transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+.close-btn:hover {
+    background-color: var(--white);
+    color: var(--pink);
+}
+
+.download-btn {
+    position: absolute;
+    bottom: 10px;
+    right: 10px;
+    padding: 10px 20px;
+    background-color: var(--pink);
+    color: var(--white);
+    text-decoration: none;
+    border-radius: 5px;
+    transition: background-color 0.3s ease, color 0.3s ease;
+    font-size: 1.4rem;
+}
+
+.download-btn:hover {
+    background-color: var(--white);
+    color: var(--pink);
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
     .about__content {
-        flex-direction: column-reverse;
-        align-items: initial;
+        flex-direction: column;
     }
-}
 
-.about__photo-container {
-    margin-bottom: var(--gutter-normal);
-}
-
-@media(min-width: 901px) {
-    .about__text {
-        flex: 0 0 35%;
+    .about__text,
+    .about__resume {
+        flex: 0 0 100%;
+        padding-right: 0;
     }
-    
-    .about__photo-container {
-        flex: 1;
-        margin: 0 var(--gutter-huge) 0 0;
+
+    .about__resume {
+        margin-top: 2rem;
     }
 }
 

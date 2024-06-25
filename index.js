@@ -48,3 +48,28 @@
     var randomColor = colors[Math.floor(Math.random() * colors.length)];
     document.documentElement.style.setProperty('--pink', randomColor);
   });
+
+  document.addEventListener('DOMContentLoaded', function() {
+    const viewResumeBtn = document.getElementById('viewResumeBtn');
+    const pdfPreviewImage = document.getElementById('pdfPreviewImage');
+    const pdfViewer = document.getElementById('pdfViewer');
+    const closePdfBtn = document.getElementById('closePdfBtn');
+  
+    function openPdfViewer(e) {
+      e.preventDefault();
+      pdfViewer.style.display = 'block';
+    }
+  
+    viewResumeBtn.addEventListener('click', openPdfViewer);
+    pdfPreviewImage.addEventListener('click', openPdfViewer);
+  
+    closePdfBtn.addEventListener('click', function() {
+      pdfViewer.style.display = 'none';
+    });
+  
+    pdfViewer.addEventListener('click', function(e) {
+      if (e.target === pdfViewer) {
+        pdfViewer.style.display = 'none';
+      }
+    });
+  });
