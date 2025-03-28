@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
+import emailjs from '@emailjs/browser';
 
 const Contact: React.FC = () => {
   const [formData, setFormData] = useState({
@@ -6,25 +7,66 @@ const Contact: React.FC = () => {
     email: '',
     message: ''
   });
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitStatus, setSubmitStatus] = useState<{
+    success: boolean;
+    message: string;
+  } | null>(null);
+  const formRef = useRef<HTMLFormElement>(null);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
+    
+    // Map form field names to state property names
+    const stateKey = name === 'user_name' ? 'name' : 
+                     name === 'user_email' ? 'email' : name;
+    
     setFormData(prev => ({
       ...prev,
-      [name]: value
+      [stateKey]: value
     }));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // In a real application, you would send the form data to a server
-    console.log('Form submitted:', formData);
-    alert('Thank you for your message! I will get back to you soon.');
-    setFormData({
-      name: '',
-      email: '',
-      message: ''
-    });
+    
+    if (!formRef.current) return;
+    
+    try {
+      setIsSubmitting(true);
+      setSubmitStatus(null);
+      
+      // Get EmailJS credentials from environment variables
+      const serviceId = process.env.REACT_APP_EMAILJS_SERVICE_ID || '';
+      const templateId = process.env.REACT_APP_EMAILJS_TEMPLATE_ID || '';
+      const publicKey = process.env.REACT_APP_EMAILJS_PUBLIC_KEY || '';
+      
+      await emailjs.sendForm(
+        serviceId,
+        templateId,
+        formRef.current,
+        publicKey
+      );
+      
+      setSubmitStatus({
+        success: true,
+        message: 'Thank you for your message! I will get back to you soon.'
+      });
+      
+      setFormData({
+        name: '',
+        email: '',
+        message: ''
+      });
+    } catch (error) {
+      console.error('Error sending email:', error);
+      setSubmitStatus({
+        success: false,
+        message: 'Failed to send message. Please try again or contact me directly via email.'
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -70,11 +112,11 @@ const Contact: React.FC = () => {
             </div>
           </div>
           
-          <form onSubmit={handleSubmit} className="contact__form">
+          <form ref={formRef} onSubmit={handleSubmit} className="contact__form">
             <div className="contact__form-div">
               <input 
                 type="text" 
-                name="name"
+                name="user_name"
                 value={formData.name}
                 onChange={handleChange}
                 className="contact__form-input" 
@@ -86,7 +128,7 @@ const Contact: React.FC = () => {
             <div className="contact__form-div">
               <input 
                 type="email" 
-                name="email"
+                name="user_email"
                 value={formData.email}
                 onChange={handleChange}
                 className="contact__form-input" 
@@ -106,7 +148,19 @@ const Contact: React.FC = () => {
               ></textarea>
             </div>
             
-            <button type="submit" className="btn contact__form-button">Send Message</button>
+            <button 
+              type="submit" 
+              className="btn contact__form-button"
+              disabled={isSubmitting}
+            >
+              {isSubmitting ? 'Sending...' : 'Send Message'}
+            </button>
+            
+            {submitStatus && (
+              <div className={`contact__form-status ${submitStatus.success ? 'success' : 'error'}`}>
+                {submitStatus.message}
+              </div>
+            )}
           </form>
         </div>
       </div>
