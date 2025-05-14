@@ -867,9 +867,14 @@ function updateTargetBracketsPosition() {
             f35State.targetBracketsElement.remove(); // Clean up brackets if no longer intercepting
             f35State.targetBracketsElement = null;
         }
-        return;
+        // return; // Keep requesting frame if intercepting but UAV is temporarily invalid
     }
-    targetBracketsAnimFrameId = requestAnimationFrame(updateTargetBracketsPosition);
+    // Continue requesting animation frame even if UAV is temporarily invalid,
+    // so it can reappear or track a new UAV if logic allows.
+    // Only stop if !window.isIntercepting.
+    if (window.isIntercepting) {
+        targetBracketsAnimFrameId = requestAnimationFrame(updateTargetBracketsPosition);
+    }
     return;
   }
 
@@ -878,6 +883,10 @@ function updateTargetBracketsPosition() {
       if (!tb) {
         tb = document.createElement('div');
         tb.className = 'target-brackets';
+        // Ensure the target-brackets element has absolute positioning.
+        // This is crucial. It might be better to set this in CSS for .target-brackets.
+        // If not set in CSS, uncomment the line below or add to CSS:
+        // tb.style.position = 'absolute';
         document.body.appendChild(tb);
       }
       f35State.targetBracketsElement = tb;
@@ -886,19 +895,29 @@ function updateTargetBracketsPosition() {
 
   f35State.targetBracketsElement.style.opacity = '1';
   const uavLiveRect = f35State.uavElement.getBoundingClientRect();
-  if (uavLiveRect.width === 0) { // UAV valid but not rendered fully (e.g., display:none briefly)
+  if (uavLiveRect.width === 0 && uavLiveRect.height === 0) { // UAV valid but not rendered fully (e.g., display:none briefly or 0 size)
       f35State.targetBracketsElement.style.opacity = '0';
       targetBracketsAnimFrameId = requestAnimationFrame(updateTargetBracketsPosition);
       return;
   }
 
-  const bracketSizeFactor = 1.1;
-  const bracketWidth = uavLiveRect.width * bracketSizeFactor;
-  const bracketHeight = uavLiveRect.height * bracketSizeFactor;
-  f35State.targetBracketsElement.style.left = `${uavLiveRect.left + uavLiveRect.width / 2 - bracketWidth / 2}px`;
-  f35State.targetBracketsElement.style.top = `${uavLiveRect.top + uavLiveRect.height / 2 - bracketHeight / 2}px`;
+  const bracketSizeFactor = 1;
+  const bracketWidth = uavLiveRect.width * 0.4;
+  const bracketHeight = uavLiveRect.height * 0.9;
+
+  // Get current scroll offsets
+  const scrollX = window.scrollX || window.pageXOffset; // pageXOffset for older browsers
+  const scrollY = window.scrollY || window.pageYOffset; // pageYOffset for older browsers
+
+  // Calculate the target position for the brackets, including scroll offsets
+  const bracketTargetLeft = uavLiveRect.left + scrollX + (uavLiveRect.width / 2) - (bracketWidth / 2) - 55;
+  const bracketTargetTop = uavLiveRect.top + scrollY + (uavLiveRect.height / 2) - (bracketHeight / 2);
+
+  f35State.targetBracketsElement.style.left = `${bracketTargetLeft}px`;
+  f35State.targetBracketsElement.style.top = `${bracketTargetTop}px`;
   f35State.targetBracketsElement.style.width = `${bracketWidth}px`;
   f35State.targetBracketsElement.style.height = `${bracketHeight}px`;
+
   targetBracketsAnimFrameId = requestAnimationFrame(updateTargetBracketsPosition);
 }
 
