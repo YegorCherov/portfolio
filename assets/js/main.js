@@ -7,17 +7,15 @@ const uavState = {
     config: {
         maxActiveUAVs: 1,
         respawnDelayMs: 5000,
-        types: [
-            {
-                name: "DefaultUAV",
-                width: 220,
-                height: 45,
-                baseSpeedPxPerMs: 0.04, // Adjusted for visibility, e.g., 40px/sec if 1000ms/sec
-                cssClass: 'uav',
-                clickableChildClass: 'uav-child-button',
-                flightPatternName: 'linearAcrossStrict',
-            }
-        ],
+        types: [{
+            name: "DefaultUAV",
+            width: 88,
+            height: 45,
+            baseSpeedPxPerMs: 0.2, // Adjusted for visibility, e.g., 40px/sec if 1000ms/sec
+            cssClass: 'uav',
+            clickableChildClass: 'uav-child-button',
+            flightPatternName: 'linearAcrossStrict',
+        }],
         flightPatterns: {
             linearAcrossStrict: function(uav, deltaTime) {
                 const viewportWidth = window.innerWidth;
@@ -39,7 +37,7 @@ const uavState = {
                     uav.alive = false;
                 }
                 if (uav.y < -uav.height * 2 || uav.y > viewportHeight + uav.height * 2) {
-                     uav.alive = false;
+                    uav.alive = false;
                 }
             },
             linearAcross: function(uav, deltaTime) {
@@ -93,12 +91,9 @@ function createUAVElement(uavData) {
     clickableArea.className = uavData.typeConfig.clickableChildClass;
     uavElement.appendChild(clickableArea);
 
+    // MODIFIED: Calls the new dispatcher function
     clickableArea.addEventListener('click', () => {
-        if (uavData.alive && f35State.mode === 'IDLE') {
-            window.startF35Intercept(uavElement, null);
-        } else if (uavData.alive && f35State.uavElement !== uavElement && window.isIntercepting) {
-            showSystemMessage("F35 ALREADY ENGAGED. AWAIT CURRENT TARGET DESTRUCTION.", 2500);
-        }
+        initiateIntercept(uavData, uavElement);
     });
 
     document.body.appendChild(uavElement);
@@ -116,7 +111,7 @@ function spawnNewUAV(typeIndex = 0) {
         console.error(`Invalid UAV typeIndex: ${typeIndex}`);
         return;
     }
-     if (!uavState.config.flightPatterns[typeConfig.flightPatternName]) {
+    if (!uavState.config.flightPatterns[typeConfig.flightPatternName]) {
         console.error(`Flight pattern "${typeConfig.flightPatternName}" not found for UAV type "${typeConfig.name}"!`);
         return;
     }
@@ -132,7 +127,9 @@ function spawnNewUAV(typeIndex = 0) {
         speedPxPerMs: typeConfig.baseSpeedPxPerMs * (0.9 + Math.random() * 0.2),
         alive: true,
         patternName: typeConfig.flightPatternName,
-        patternState: { initialized: false },
+        patternState: {
+            initialized: false
+        },
     };
     uavData.element = createUAVElement(uavData);
 
@@ -213,16 +210,23 @@ function handleUAVDestroyedVisuals(uav, byMissile = true) {
             item => (performance.now() - (item.timeToSpawn - uavState.config.respawnDelayMs)) < recentQueueThreshold
         );
         if (!isRecentlyQueued) {
-            uavState.respawnQueue.push({ timeToSpawn: performance.now() + uavState.config.respawnDelayMs });
+            uavState.respawnQueue.push({
+                timeToSpawn: performance.now() + uavState.config.respawnDelayMs
+            });
         }
     }
 
+    // Clear target from both systems
     if (f35State.uavElement === uav.element) {
         f35State.uavElement = null;
+    }
+    if (aaState.targetUAVObject === uav) {
+        aaState.targetUAVObject = null;
     }
 }
 
 let uavUpdateLoopId = null;
+
 function runUAVSystem(timestamp) {
     if (!uavState.lastTimestamp) {
         uavState.lastTimestamp = timestamp;
@@ -250,90 +254,122 @@ function runUAVSystem(timestamp) {
     uavUpdateLoopId = requestAnimationFrame(runUAVSystem);
 }
 
-// ===== F35 INTERCEPTION LOGIC (CALLED FROM REACT) =====
+// ===== NEW: INTERCEPT DISPATCHER =====
+function initiateIntercept(uavData, uavElement) {
+    if (!uavData.alive) return;
 
+    if (f35State.mode !== 'IDLE' || aaState.mode !== 'IDLE') {
+        showSystemMessage("ASSET ALREADY ENGAGED. AWAIT CURRENT TARGET DESTRUCTION.", 2500);
+        return;
+    }
+
+    if (Math.random() < 0.5) {
+        showSystemMessage("SCRAMBLING F35...", 1500);
+        window.startF35Intercept(uavElement, null);
+    } else {
+        showSystemMessage("ACTIVATING GROUND-BASED AIR DEFENSE...", 1500);
+        window.startAAIntercept(uavData);
+    }
+}
+
+
+// ===== F35 INTERCEPTION LOGIC (RESTORED TO ORIGINAL) =====
 let f35FlightAnimFrameId = null;
-let missileAnimFrameId = null;
+let missileAnimFrameId = null; // Original name
 let targetBracketsAnimFrameId = null;
-let smokeIntervalId = null;
-let explosionTimeoutId = null;
+let smokeIntervalId = null; // Original name
+let explosionTimeoutId = null; // Original name
 
 const f35State = {
-    element: null,
-    x: 0, y: 0,
-    angle: 0,
-    speed: 0,
-    targetSpeed: 0.5,
-    acceleration: 0.003,
-    deceleration: 0.005,
-    turnRate: 0.5,
-    mode: 'IDLE',
-    waypoint: { x: 0, y: 0 },
-    timeInMode: 0,
-    hasFired: false,
-    uavElement: null,
-    missileElement: null,
-    explosionElement: null,
-    clickedButtonElement: null,
-    targetBracketsElement: null,
-    initialUAVAimPos: {x:0, y:0},
-    MIN_FIRING_DISTANCE: 300,
-    MANEUVER_ANGLE_THRESHOLD: 20,
-    MANEUVER_SLOWDOWN_FACTOR: 0.6,
-    MIN_EFFECTIVE_SPEED: 1.0,
-    spriteMirrorX: false,
+    element: null, x: 0, y: 0, angle: 0, speed: 0, targetSpeed: 0.5, acceleration: 0.003,
+    deceleration: 0.005, turnRate: 0.5, mode: 'IDLE', waypoint: { x: 0, y: 0 },
+    timeInMode: 0, hasFired: false, uavElement: null, missileElement: null, explosionElement: null,
+    clickedButtonElement: null, targetBracketsElement: null, initialUAVAimPos: { x: 0, y: 0 },
+    MIN_FIRING_DISTANCE: 300, MANEUVER_ANGLE_THRESHOLD: 20, MANEUVER_SLOWDOWN_FACTOR: 0.6,
+    MIN_EFFECTIVE_SPEED: 1.0, spriteMirrorX: false,
     missileFlightState: {
-        x: 0,
-        y: 0,
-        velocityX: 0,
-        velocityY: 0,
-        speed: 0,
-        targetSpeed: 0.06,
-        acceleration: 0.02,
-        spriteMirrorX: false,
-        currentAngleDeg: 0
+        x: 0, y: 0, velocityX: 0, velocityY: 0, speed: 0, targetSpeed: 0.06, acceleration: 0.02,
+        spriteMirrorX: false, currentAngleDeg: 0
     }
 };
 
+// ===== NEW: AA SYSTEM LOGIC =====
+let aaSystemUpdateId = null;
+let aa_missileAnimFrameId = null;
+let aa_smokeIntervalId = null;
+let aa_explosionTimeoutId = null;
+
+const aaState = {
+    mode: 'IDLE', // IDLE, DEPLOYING, TRACKING, FIRING, DISENGAGING
+    elements: {
+        cnc: null, launcher: null, radar: null, radarLine: null, missile: null, explosion: null
+    },
+    targetUAVObject: null,
+    missilesRemaining: 4,
+    timeInMode: 0,
+    lastFiredTimestamp: 0,
+    missileInFlight: false,
+    config: {
+        cnc:      { left: '44%', bottom: '5px' },
+        launcher: { right: '10%', bottom: '0px' },
+        radar:    { left:  '10%', bottom: '-15px' },
+        radarLineStartOffset: { x: 50, y: -60 },
+        radarLineEndOffset:   { x: 0,  y: 0 },
+        launcherMissileSlots: [
+            { x: 65, y: 15 }, { x: 80, y: 35 }, { x: 50, y: 40 }, { x: 65, y: 60 }
+        ],
+        missileInitialAngle: -115,
+        ascentStraightenFrames: 0, // Frames to transition from initial angle to straight up (~0.6s)
+        ascentBoostFrames: 0,      // Frames to fly straight up after straightening (~0.5s)
+
+        deployDuration: 500,
+        trackingDuration: 2000,
+        reloadDuration: 1500,
+        disengageDuration: 1000,
+    },
+    missileFlightState: {
+        x: 0, y: 0, velocityX: 0, velocityY: 0, currentAngleDeg: 0,
+        framesSinceLaunch: 0, homingActive: false
+    }
+};
+
+
 function resetGlobalAnimationState() {
+    // F35 Reset (Using original variable names)
     if (f35FlightAnimFrameId) cancelAnimationFrame(f35FlightAnimFrameId);
     if (missileAnimFrameId) cancelAnimationFrame(missileAnimFrameId);
     if (targetBracketsAnimFrameId) cancelAnimationFrame(targetBracketsAnimFrameId);
     if (smokeIntervalId) clearInterval(smokeIntervalId);
     if (explosionTimeoutId) clearTimeout(explosionTimeoutId);
-
-    f35FlightAnimFrameId = null;
-    missileAnimFrameId = null;
-    targetBracketsAnimFrameId = null;
-    smokeIntervalId = null;
-    explosionTimeoutId = null;
-
-    f35State.hasFired = false;
-    f35State.timeInMode = 0;
-    f35State.spriteMirrorX = false;
-    if (f35State.missileFlightState) {
-        f35State.missileFlightState.spriteMirrorX = false;
-    }
-
+    f35FlightAnimFrameId = missileAnimFrameId = targetBracketsAnimFrameId = smokeIntervalId = explosionTimeoutId = null;
+    f35State.hasFired = false; f35State.timeInMode = 0; f35State.spriteMirrorX = false;
+    if (f35State.missileFlightState) { f35State.missileFlightState.spriteMirrorX = false; }
+    
     const f35 = document.querySelector('.f35');
-    if (f35 && f35State.mode === 'IDLE') {
-      f35.style.opacity = '0';
-      f35.classList.remove('animating');
-    }
+    if (f35) { f35.style.opacity = '0'; f35.classList.remove('animating'); }
     const missile = document.querySelector('.missile');
     if(missile) missile.style.opacity = '0';
     const explosion = document.querySelector('.explosion');
-    if(explosion) {
-        explosion.style.opacity = '0';
-        explosion.style.animation = 'none';
-        explosion.style.backgroundPositionX = '0px';
-        explosion.style.backgroundPositionY = '0px';
-    }
+    if(explosion) { explosion.style.opacity = '0'; explosion.style.animation = 'none'; explosion.style.backgroundPositionX = '0px'; explosion.style.backgroundPositionY = '0px';}
     let tb = document.querySelector('.target-brackets');
-    if (tb && tb.parentNode) {
-        tb.remove();
-    }
+    if (tb && tb.parentNode) { tb.remove(); }
     f35State.targetBracketsElement = null;
+    f35State.mode = 'IDLE';
+
+    // AA System Reset (Using prefixed variable names)
+    if (aaSystemUpdateId) cancelAnimationFrame(aaSystemUpdateId);
+    if (aa_missileAnimFrameId) cancelAnimationFrame(aa_missileAnimFrameId);
+    if (aa_smokeIntervalId) clearInterval(aa_smokeIntervalId);
+    if (aa_explosionTimeoutId) clearTimeout(aa_explosionTimeoutId);
+    aaSystemUpdateId = aa_missileAnimFrameId = aa_smokeIntervalId = aa_explosionTimeoutId = null;
+    if (aaState.elements.radarLine && aaState.elements.radarLine.parentNode) { aaState.elements.radarLine.remove(); aaState.elements.radarLine = null; }
+    Object.values(aaState.elements).forEach(el => { if (el) el.style.opacity = '0'; });
+    const aa_explosion = document.querySelector('.aa-explosion');
+    if (aa_explosion) aa_explosion.style.opacity = '0';
+    aaState.mode = 'IDLE';
+    aaState.missileInFlight = false;
+    
+    window.isIntercepting = false;
 }
 
 function showSystemMessage(message, duration = 2000) {
@@ -358,6 +394,7 @@ function showSystemMessage(message, duration = 2000) {
     }, duration);
 }
 
+// ===== F35 FLIGHT/INTERCEPT FUNCTIONS (RESTORED) =====
 function updateF35Flight() {
     if (!f35State.element || f35State.mode === 'IDLE') {
         if (f35FlightAnimFrameId) cancelAnimationFrame(f35FlightAnimFrameId);
@@ -370,34 +407,21 @@ function updateF35Flight() {
 
     switch (f35State.mode) {
         case 'ENTERING':
-            // This runs once to set up the arc path
             const startX = f35State.x;
             const startY = f35State.y;
-
-            // Determine an end point off the opposite side of the screen
             const endX = (startX < window.innerWidth / 2) ? window.innerWidth + 200 : -200;
-            const endY = startY + (Math.random() * 100 - 50); // Slight vertical variation
-
-            // Determine a control point to create the "peak" of the arc
+            const endY = startY + (Math.random() * 100 - 50);
             const controlX = window.innerWidth / 2;
-            const controlY = Math.min(startY, endY) - (150 + Math.random() * 150); // Arc "upwards"
+            const controlY = Math.min(startY, endY) - (150 + Math.random() * 150);
 
-            // Store the path and progress state
-            f35State.arcPath = {
-                p0: { x: startX, y: startY },       // Start point
-                p1: { x: controlX, y: controlY },   // Bézier control point
-                p2: { x: endX, y: endY }            // End point
-            };
-            f35State.arcProgress = 0; // Represents 't' from 0 to 1 in the Bézier formula
-
-            // Transition to the main flying state
+            f35State.arcPath = { p0: { x: startX, y: startY }, p1: { x: controlX, y: controlY }, p2: { x: endX, y: endY } };
+            f35State.arcProgress = 0;
             f35State.mode = 'FLYING_ARC';
             f35State.timeInMode = 0;
             break;
 
         case 'FLYING_ARC':
-            // Fire the missile after a set delay (500ms = ~30 frames at 60fps)
-            const FIRING_DELAY_FRAMES = 30;
+            const FIRING_DELAY_FRAMES = 120;
             if (f35State.timeInMode > FIRING_DELAY_FRAMES && !f35State.hasFired) {
                 const targetUAVObject = f35State.uavElement ? uavState.uavs.find(u => u.element === f35State.uavElement) : null;
                 if (targetUAVObject && targetUAVObject.alive) {
@@ -407,54 +431,41 @@ function updateF35Flight() {
                 }
             }
 
-            // Move the F35 along the predefined arc
-            const arcTraversalSpeed = 0.002; // Lower is slower. 1/speed = frames to complete.
+            const arcTraversalSpeed = 0.002;
             f35State.arcProgress += arcTraversalSpeed;
 
-            // Check if the arc is complete
             if (f35State.arcProgress >= 1) {
-                f35State.mode = 'IDLE';
-                resetGlobalAnimationState();
-                return; // End the update loop for this intercept
-            }
-
-            const t = f35State.arcProgress;
-            const p0 = f35State.arcPath.p0;
-            const p1 = f35State.arcPath.p1;
-            const p2 = f35State.arcPath.p2;
-
-            // Calculate current position using the quadratic Bézier formula
-            f35State.x = Math.pow(1 - t, 2) * p0.x + 2 * (1 - t) * t * p1.x + Math.pow(t, 2) * p2.x;
-            f35State.y = Math.pow(1 - t, 2) * p0.y + 2 * (1 - t) * t * p1.y + Math.pow(t, 2) * p2.y;
-            
-            // Calculate the angle using the derivative of the Bézier curve for a smooth tangent
-            const dx_dt = 2 * (1 - t) * (p1.x - p0.x) + 2 * t * (p2.x - p1.x);
-            const dy_dt = 2 * (1 - t) * (p1.y - p0.y) + 2 * t * (p2.y - p1.y);
-            f35State.angle = Math.atan2(dy_dt, dx_dt) * 180 / Math.PI;
-
-            // Apply the new position and rotation to the element
-            f35State.element.style.left = `${f35State.x - f35State.element.offsetWidth / 2}px`;
-            f35State.element.style.top = `${f35State.y - f35State.element.offsetHeight / 2}px`;
-            f35State.element.style.transform = `rotate(${f35State.angle}deg) ${f35State.spriteMirrorX ? 'scaleX(-1)' : 'scaleX(1)'}`;
-            break;
-            
-        case 'DISENGAGING': // Reroute any stray calls to this state to the main arc logic
-            if (!f35State.arcPath) {
-                // If somehow called without an arc path, just exit gracefully
                 f35State.mode = 'IDLE';
                 resetGlobalAnimationState();
                 return;
             }
+
+            const t = f35State.arcProgress;
+            const p0 = f35State.arcPath.p0, p1 = f35State.arcPath.p1, p2 = f35State.arcPath.p2;
+            f35State.x = Math.pow(1 - t, 2) * p0.x + 2 * (1 - t) * t * p1.x + Math.pow(t, 2) * p2.x;
+            f35State.y = Math.pow(1 - t, 2) * p0.y + 2 * (1 - t) * t * p1.y + Math.pow(t, 2) * p2.y;
+            const dx_dt = 2 * (1 - t) * (p1.x - p0.x) + 2 * t * (p2.x - p1.x);
+            const dy_dt = 2 * (1 - t) * (p1.y - p0.y) + 2 * t * (p2.y - p1.y);
+            f35State.angle = Math.atan2(dy_dt, dx_dt) * 180 / Math.PI;
+
+            f35State.element.style.left = `${f35State.x - f35State.element.offsetWidth / 2}px`;
+            f35State.element.style.top = `${f35State.y - f35State.element.offsetHeight / 2}px`;
+            let scaleX = 1, scaleY = 1;
+            if (f35State.spriteMirrorX) { scaleX = 1; scaleY = -1; }
+            f35State.element.style.transform = `rotate(${f35State.angle}deg) scaleX(${scaleX}) scaleY(${scaleY})`;
+            break;
+            
+        case 'DISENGAGING':
+            if (!f35State.arcPath) { f35State.mode = 'IDLE'; resetGlobalAnimationState(); return; }
             f35State.mode = 'FLYING_ARC';
             break;
 
-        default: // If in an unknown state, reset and go idle
+        default:
             f35State.mode = 'IDLE';
             resetGlobalAnimationState();
             return;
     }
 
-    // Continue the animation loop if not yet idle
     if (f35State.mode !== 'IDLE') {
       f35FlightAnimFrameId = requestAnimationFrame(updateF35Flight);
     } else {
@@ -464,7 +475,7 @@ function updateF35Flight() {
     }
 }
 
-function launchMissileFromF35() {
+function launchMissileFromF35() { // RESTORED TO ORIGINAL
     const missile = f35State.missileElement;
     if (!missile) { console.error("Missile element not found!"); return; }
 
@@ -474,17 +485,14 @@ function launchMissileFromF35() {
     const f35CurrentWidth = f35State.element.offsetWidth;
     const noseOffsetFactor = f35CurrentWidth * 0.3;
     
-    // **FIX**: Initialize position in our JavaScript state
     f35State.missileFlightState.x = f35State.x + (noseOffsetFactor * Math.cos(f35AngleRad)) - missileWidth / 2;
     f35State.missileFlightState.y = f35State.y + (noseOffsetFactor * Math.sin(f35AngleRad)) - missileHeight / 2;
 
-    // Set the initial visual position from our state
     missile.style.left = `${f35State.missileFlightState.x}px`;
     missile.style.top = `${f35State.missileFlightState.y}px`;
     
-    // Initialize missile state - inherit F35's velocity initially
     f35State.missileFlightState.currentAngleDeg = f35State.angle;
-    f35State.missileFlightState.speed = f35State.speed * 0.8; // Start with most of F35's speed
+    f35State.missileFlightState.speed = f35State.speed * 0.8;
     f35State.missileFlightState.velocityX = Math.cos(f35AngleRad) * f35State.missileFlightState.speed;
     f35State.missileFlightState.velocityY = Math.sin(f35AngleRad) * f35State.missileFlightState.speed;
     f35State.missileFlightState.framesSinceLaunch = 0;
@@ -500,32 +508,10 @@ function launchMissileFromF35() {
         }
     }, 500);
 
-    if (smokeIntervalId) clearInterval(smokeIntervalId);
-    smokeIntervalId = setInterval(() => {
-        // **FIX**: Read from JS state, not DOM, for smoke trail position
-        if (missile.style.opacity === '0' || !window.isIntercepting) {
-            clearInterval(smokeIntervalId); smokeIntervalId = null; return;
-        }
-        const smokeTrail = document.createElement('div');
-        smokeTrail.className = 'smoke-trail';
-        const trailAngleRad = (f35State.missileFlightState.currentAngleDeg || 0) * Math.PI / 180;
-        const mWidth = missile.offsetWidth || 50;
-        const mHeight = missile.offsetHeight || 10;
-        smokeTrail.style.left = `${f35State.missileFlightState.x + mWidth / 2 - 5 - Math.cos(trailAngleRad) * (mWidth * 0.55)}px`;
-        smokeTrail.style.top = `${f35State.missileFlightState.y + mHeight / 2 - 5 - Math.sin(trailAngleRad) * (mWidth * 0.55)}px`;
-        document.body.appendChild(smokeTrail);
-        smokeTrail.addEventListener('animationend', () => { if (smokeTrail.parentNode) smokeTrail.remove(); });
-    }, 50);
-
     let hitOccurred = false;
     const MAX_MISSILE_FLIGHT_FRAMES = 800;
-    
-    // Missile behavior constants
-    const DROP_FRAMES = 8; // Frames to drop before booster ignites
-    const DROP_GRAVITY = 0.15; // Downward acceleration during drop
-    const BOOSTER_ACCELERATION = 0.3; // Acceleration per frame when booster active
-    const MAX_MISSILE_SPEED = 8.0; 
-    const HOMING_TURN_RATE = 1.5; // Degrees per frame
+    const DROP_FRAMES = 32, DROP_GRAVITY = 0.15, BOOSTER_ACCELERATION = 0.3;
+    const MAX_MISSILE_SPEED = 8.0, HOMING_TURN_RATE = 1.5;
 
     function animateMissileFlight() {
         if (hitOccurred || !window.isIntercepting) {
@@ -537,12 +523,9 @@ function launchMissileFromF35() {
         
         f35State.missileFlightState.framesSinceLaunch++;
         const frameCount = f35State.missileFlightState.framesSinceLaunch;
-
         const targetUAVObject = f35State.uavElement ? uavState.uavs.find(u => u.element === f35State.uavElement) : null;
-        if (!targetUAVObject || !targetUAVObject.alive || !targetUAVObject.element || 
-            targetUAVObject.element.style.opacity === '0' || !targetUAVObject.element.parentNode) {
-            if (hitOccurred) return;
-            hitOccurred = true;
+        if (!targetUAVObject || !targetUAVObject.alive) {
+            if (hitOccurred) return; hitOccurred = true;
             if (missileAnimFrameId) cancelAnimationFrame(missileAnimFrameId); missileAnimFrameId = null;
             if (missile) missile.style.opacity = '0';
             if (smokeIntervalId) { clearInterval(smokeIntervalId); smokeIntervalId = null; }
@@ -550,121 +533,90 @@ function launchMissileFromF35() {
             return;
         }
         
-        // **FIX START**: Entire logic is now based on JS state, not DOM reads
-        const missileWidth = missile.offsetWidth || 50;
-        const missileHeight = missile.offsetHeight || 10;
-        const currentMissileCenterX = f35State.missileFlightState.x + missileWidth / 2;
-        const currentMissileCenterY = f35State.missileFlightState.y + missileHeight / 2;
-
-        // Phase 1: Drop phase (frames 0-DROP_FRAMES)
         if (frameCount <= DROP_FRAMES) {
             f35State.missileFlightState.velocityY += DROP_GRAVITY;
-            const speedLoss = 0.95;
-            f35State.missileFlightState.velocityX *= speedLoss;
-            f35State.missileFlightState.velocityY *= speedLoss;
         } 
-        // Phase 2: Booster ignition and homing
         else {
-            if (!f35State.missileFlightState.homingActive) {
-                f35State.missileFlightState.homingActive = true;
-                f35State.missileFlightState.speed = Math.sqrt(
-                    f35State.missileFlightState.velocityX ** 2 + 
-                    f35State.missileFlightState.velocityY ** 2
-                );
-            }
+            if (!f35State.missileFlightState.homingActive) f35State.missileFlightState.homingActive = true;
+            
+            const targetCenterX = targetUAVObject.x + targetUAVObject.width / 2;
+            const targetCenterY = (targetUAVObject.y + targetUAVObject.height / 2) - 70;
+            const missileGlobalX = f35State.missileFlightState.x + (missile.offsetWidth||50)/2;
+            const missileGlobalY = f35State.missileFlightState.y + (missile.offsetHeight||10)/2;
 
-            const uavCurrentRect = targetUAVObject.element.getBoundingClientRect();
-            const targetX = uavCurrentRect.left + uavCurrentRect.width / 2;
-            const targetY = uavCurrentRect.top + uavCurrentRect.height / 2;
-
-            const dxToTarget = targetX - currentMissileCenterX;
-            const dyToTarget = targetY - currentMissileCenterY;
+            const dxToTarget = targetCenterX - missileGlobalX, dyToTarget = targetCenterY - missileGlobalY;
             const angleToTargetDeg = Math.atan2(dyToTarget, dxToTarget) * 180 / Math.PI;
-
             let angleDiff = angleToTargetDeg - f35State.missileFlightState.currentAngleDeg;
-            while (angleDiff > 180) angleDiff -= 360;
-            while (angleDiff < -180) angleDiff += 360;
+            while (angleDiff > 180) angleDiff -= 360; while (angleDiff < -180) angleDiff += 360;
             
             const turnAmount = Math.max(-HOMING_TURN_RATE, Math.min(HOMING_TURN_RATE, angleDiff));
             f35State.missileFlightState.currentAngleDeg = (f35State.missileFlightState.currentAngleDeg + turnAmount + 360) % 360;
 
-            f35State.missileFlightState.speed = Math.min(
-                MAX_MISSILE_SPEED, 
-                f35State.missileFlightState.speed + BOOSTER_ACCELERATION
-            );
+            const thrustAngleRad = f35State.missileFlightState.currentAngleDeg * Math.PI / 180;
+            const accelerationX = Math.cos(thrustAngleRad) * BOOSTER_ACCELERATION;
+            const accelerationY = Math.sin(thrustAngleRad) * BOOSTER_ACCELERATION;
+            f35State.missileFlightState.velocityX += accelerationX;
+            f35State.missileFlightState.velocityY += accelerationY;
 
-            const angleRad = f35State.missileFlightState.currentAngleDeg * Math.PI / 180;
-            f35State.missileFlightState.velocityX = Math.cos(angleRad) * f35State.missileFlightState.speed;
-            f35State.missileFlightState.velocityY = Math.sin(angleRad) * f35State.missileFlightState.speed;
+            const currentSpeed = Math.sqrt(f35State.missileFlightState.velocityX ** 2 + f35State.missileFlightState.velocityY ** 2);
+            if (currentSpeed > MAX_MISSILE_SPEED) {
+                const speedFactor = MAX_MISSILE_SPEED / currentSpeed;
+                f35State.missileFlightState.velocityX *= speedFactor;
+                f35State.missileFlightState.velocityY *= speedFactor;
+            }
         }
 
-        // Apply velocity to our state's position
         f35State.missileFlightState.x += f35State.missileFlightState.velocityX;
         f35State.missileFlightState.y += f35State.missileFlightState.velocityY;
         
-        // Render the missile's new position from our state
         missile.style.left = `${f35State.missileFlightState.x}px`;
         missile.style.top = `${f35State.missileFlightState.y}px`;
-        
-        const visualAngle = Math.atan2(f35State.missileFlightState.velocityY, f35State.missileFlightState.velocityX) * 180 / Math.PI;
-        missile.style.transform = `rotate(${visualAngle}deg) ${f35State.missileFlightState.spriteMirrorX ? 'scaleX(-1)' : 'scaleX(1)'}`;
-        // **FIX END**
+        missile.style.transform = `rotate(${f35State.missileFlightState.currentAngleDeg}deg) ${f35State.missileFlightState.spriteMirrorX ? 'scaleX(-1)' : 'scaleX(1)'}`;
 
-        // Check for collision
-        const uavCurrentRect = targetUAVObject.element.getBoundingClientRect();
-        if (missile.style.opacity !== '0' &&
-            (f35State.missileFlightState.x + missileWidth) > uavCurrentRect.left &&
-            f35State.missileFlightState.x < uavCurrentRect.right &&
-            (f35State.missileFlightState.y + missileHeight) > uavCurrentRect.top &&
-            f35State.missileFlightState.y < uavCurrentRect.bottom) {
+        const hitboxWidth = 100, hitboxHeight = 100;
+        const hitboxLeft = targetUAVObject.x - hitboxWidth / 2, hitboxRight = targetUAVObject.x + hitboxWidth / 2;
+        const hitboxTop = targetUAVObject.y - hitboxHeight / 2, hitboxBottom = targetUAVObject.y + hitboxHeight / 2;
 
-            if (hitOccurred) return;
-            hitOccurred = true;
-            if (missileAnimFrameId) cancelAnimationFrame(missileAnimFrameId); missileAnimFrameId = null;
-            if (smokeIntervalId) { clearInterval(smokeIntervalId); smokeIntervalId = null; }
+        if (missile.style.opacity !== '0' && !hitOccurred) {
+            const missileCenterX = f35State.missileFlightState.x + (missile.offsetWidth || 50) / 2;
+            const missileCenterY = f35State.missileFlightState.y + (missile.offsetHeight || 10) / 2;
 
-            missile.style.opacity = '0';
-            handleUAVDestroyedVisuals(targetUAVObject, true);
+            const isColliding = missileCenterX - 5 > hitboxLeft && missileCenterX + 5 < hitboxRight &&
+                                missileCenterY - 5 > hitboxTop && missileCenterY + 5 < hitboxBottom;
 
-            if (targetBracketsAnimFrameId) cancelAnimationFrame(targetBracketsAnimFrameId);
-            targetBracketsAnimFrameId = null;
-            if (f35State.targetBracketsElement && f35State.targetBracketsElement.parentNode) {
-                f35State.targetBracketsElement.remove();
-                f35State.targetBracketsElement = null;
-            }
+            if (isColliding) {
+                if (hitOccurred) return; hitOccurred = true;
 
-            const explosion = f35State.explosionElement;
-            const targetMissileX = uavCurrentRect.left + uavCurrentRect.width / 2;
-            const targetMissileY = uavCurrentRect.top + uavCurrentRect.height / 2;
-            explosion.style.left = `${targetMissileX - explosion.offsetWidth / 2}px`;
-            explosion.style.top = `${targetMissileY - explosion.offsetHeight / 2}px`;
-            explosion.style.opacity = '1';
-            explosion.style.animation = 'none';
+                missile.style.opacity = '0';
+                handleUAVDestroyedVisuals(targetUAVObject, true);
 
-            const explosionFramesPerRow = 8; const explosionTotalFrames = 48;
-            const explosionFrameDuration = 800 / explosionTotalFrames;
-            let currentExplosionFrame = 0;
-            function animateExplosionStep() {
-                if (currentExplosionFrame >= explosionTotalFrames) {
-                    if (explosion.parentNode) explosion.style.opacity = '0';
-                    return;
+                if (targetBracketsAnimFrameId) cancelAnimationFrame(targetBracketsAnimFrameId);
+                targetBracketsAnimFrameId = null;
+                if (f35State.targetBracketsElement && f35State.targetBracketsElement.parentNode) {
+                    f35State.targetBracketsElement.remove(); f35State.targetBracketsElement = null;
                 }
-                const row = Math.floor(currentExplosionFrame / explosionFramesPerRow);
-                const col = currentExplosionFrame % explosionFramesPerRow;
-                explosion.style.backgroundPositionX = `-${col * 240}px`;
-                explosion.style.backgroundPositionY = `-${row * 240}px`;
-                currentExplosionFrame++;
-                explosionTimeoutId = setTimeout(animateExplosionStep, explosionFrameDuration);
+
+                const explosion = f35State.explosionElement;
+                explosion.style.left = `${targetUAVObject.x - explosion.offsetWidth / 2}px`;
+                explosion.style.top = `${targetUAVObject.y - explosion.offsetHeight / 2 - 55}px`;
+                explosion.style.opacity = '1'; explosion.style.animation = 'none';
+
+                let currentExplosionFrame = 0;
+                function animateExplosionStep() {
+                    if (currentExplosionFrame >= 48) { if (explosion.parentNode) explosion.style.opacity = '0'; return; }
+                    const col = currentExplosionFrame % 8, row = Math.floor(currentExplosionFrame / 8);
+                    explosion.style.backgroundPositionX = `-${col * 240}px`; explosion.style.backgroundPositionY = `-${row * 240}px`;
+                    currentExplosionFrame++;
+                    explosionTimeoutId = setTimeout(animateExplosionStep, 800 / 48);
+                }
+                animateExplosionStep();
+                showSystemMessage("IMPACT CONFIRMED!", 2000);
+                return;
             }
-            animateExplosionStep();
-            showSystemMessage("IMPACT CONFIRMED!", 2000);
-            return;
         }
 
-        // Timeout check
         if (frameCount > MAX_MISSILE_FLIGHT_FRAMES && !hitOccurred) {
-            if (hitOccurred) return;
-            hitOccurred = true;
+            if (hitOccurred) return; hitOccurred = true;
             if (missileAnimFrameId) cancelAnimationFrame(missileAnimFrameId); missileAnimFrameId = null;
             if (smokeIntervalId) { clearInterval(smokeIntervalId); smokeIntervalId = null; }
             if (missile.style.opacity !== '0') missile.style.opacity = '0';
@@ -680,37 +632,28 @@ function launchMissileFromF35() {
 }
 
 function actualF35InterceptLogic(visualUavElement, _clickedButtonElement) {
-    if (f35State.mode !== 'IDLE') {
-        showSystemMessage("F35 ALREADY OPERATIONAL", 1500);
-        return;
-    }
+    if (f35State.mode !== 'IDLE') { showSystemMessage("F35 ALREADY OPERATIONAL", 1500); return; }
     resetGlobalAnimationState();
 
     f35State.element = document.querySelector('.f35');
     f35State.missileElement = document.querySelector('.missile');
     f35State.explosionElement = document.querySelector('.explosion');
-
     f35State.uavElement = visualUavElement;
+
     if (!f35State.uavElement || !f35State.uavElement.parentNode) {
-        showSystemMessage("INITIAL TARGET INVALID. F35 STANDING BY.", 2000);
-        f35State.mode = 'IDLE';
-        return;
+        showSystemMessage("INITIAL TARGET INVALID. F35 STANDING BY.", 2000); f35State.mode = 'IDLE'; return;
     }
     const uavRectInitial = visualUavElement.getBoundingClientRect();
     f35State.initialUAVAimPos.x = uavRectInitial.left + uavRectInitial.width / 2;
     f35State.initialUAVAimPos.y = uavRectInitial.top + uavRectInitial.height / 2;
 
     if (!f35State.element || !f35State.missileElement || !f35State.explosionElement) {
-        console.error("F35 Intercept: Missing critical F35/weapon DOM elements.");
-        window.isIntercepting = false;
-        f35State.mode = 'IDLE';
-        return;
+        console.error("F35 Intercept: Missing critical DOM elements."); window.isIntercepting = false; f35State.mode = 'IDLE'; return;
     }
 
     window.isIntercepting = true;
     f35State.element.classList.add('animating');
-    f35State.element.style.opacity = '1';
-    f35State.element.style.transition = 'none';
+    f35State.element.style.opacity = '1'; f35State.element.style.transition = 'none';
 
     const f35InitialWidth = f35State.element.offsetWidth || 100;
     const targetIsLeftHalf = f35State.initialUAVAimPos.x < window.innerWidth / 2;
@@ -718,139 +661,394 @@ function actualF35InterceptLogic(visualUavElement, _clickedButtonElement) {
     f35State.y = (window.innerHeight * (0.15 + Math.random() * 0.25));
     f35State.angle = targetIsLeftHalf ? (180 + (Math.random() * 20 - 10)) : (Math.random() * 20 - 10);
 
-    f35State.speed = 0;
-    f35State.targetSpeed = 4 + Math.random();
-    f35State.mode = 'ENTERING';
-    f35State.timeInMode = 0;
-    f35State.hasFired = false;
-    f35State.spriteMirrorX = false;
+    f35State.speed = 0; f35State.targetSpeed = 4 + Math.random(); f35State.mode = 'ENTERING';
+    f35State.timeInMode = 0; f35State.hasFired = false; f35State.spriteMirrorX = !targetIsLeftHalf;
     if (f35State.missileFlightState) f35State.missileFlightState.spriteMirrorX = false;
-
-    f35State.waypoint.x = f35State.initialUAVAimPos.x + (targetIsLeftHalf ? -1 : 1) * (window.innerWidth * 0.2);
-    f35State.waypoint.y = f35State.initialUAVAimPos.y + (Math.random() * 100 - 50);
 
     showSystemMessage("F35 ENGAGING. SCANNING AIRSPACE...", 2000);
 
     if (!f35State.targetBracketsElement || !f35State.targetBracketsElement.parentNode) {
         let tb = document.querySelector('.target-brackets');
-        if (!tb) {
-          tb = document.createElement('div');
-          tb.className = 'target-brackets';
-          document.body.appendChild(tb);
-        }
+        if (!tb) { tb = document.createElement('div'); tb.className = 'target-brackets'; document.body.appendChild(tb); }
         f35State.targetBracketsElement = tb;
     }
+    f35State.targetBracketsElement.style.opacity = '0'; f35State.targetBracketsElement.style.animation = 'none';
+    void f35State.targetBracketsElement.offsetWidth;
+    f35State.targetBracketsElement.style.animation = 'targetLock 0.75s ease-out forwards';
+    f35State.targetBracketsElement.style.opacity = '1';
 
-    if (f35State.targetBracketsElement) {
-        f35State.targetBracketsElement.style.opacity = '0'; // Briefly hide to ensure animation restarts
-        f35State.targetBracketsElement.style.animation = 'none';
-        void f35State.targetBracketsElement.offsetWidth; // Force reflow
-        f35State.targetBracketsElement.style.animation = 'targetLock 0.75s ease-out forwards';
-        f35State.targetBracketsElement.style.opacity = '1';
-    }
-
-    if (!targetBracketsAnimFrameId) {
-        targetBracketsAnimFrameId = requestAnimationFrame(updateTargetBracketsPosition);
-    }
-    if (!f35FlightAnimFrameId) {
-        f35FlightAnimFrameId = requestAnimationFrame(updateF35Flight);
-    }
+    if (!targetBracketsAnimFrameId) { targetBracketsAnimFrameId = requestAnimationFrame(updateTargetBracketsPosition); }
+    if (!f35FlightAnimFrameId) { f35FlightAnimFrameId = requestAnimationFrame(updateF35Flight); }
 }
 window.startF35Intercept = actualF35InterceptLogic;
 
 function updateTargetBracketsPosition() {
-  if (!window.isIntercepting || !f35State.uavElement || !f35State.uavElement.parentNode || f35State.uavElement.style.opacity === '0') {
-    if (f35State.targetBracketsElement) {
-        f35State.targetBracketsElement.style.opacity = '0';
-    }
-    if (!window.isIntercepting && targetBracketsAnimFrameId) {
-        cancelAnimationFrame(targetBracketsAnimFrameId);
-        targetBracketsAnimFrameId = null;
-        if (f35State.targetBracketsElement && f35State.targetBracketsElement.parentNode) {
-            f35State.targetBracketsElement.remove();
-            f35State.targetBracketsElement = null;
+    const currentTargetElement = f35State.uavElement || (aaState.targetUAVObject ? aaState.targetUAVObject.element : null);
+    if (!window.isIntercepting || !currentTargetElement || !currentTargetElement.parentNode || currentTargetElement.style.opacity === '0') {
+        if (f35State.targetBracketsElement) f35State.targetBracketsElement.style.opacity = '0';
+        if (!window.isIntercepting && targetBracketsAnimFrameId) {
+            cancelAnimationFrame(targetBracketsAnimFrameId); targetBracketsAnimFrameId = null;
+            if (f35State.targetBracketsElement && f35State.targetBracketsElement.parentNode) { f35State.targetBracketsElement.remove(); f35State.targetBracketsElement = null; }
         }
+        if (window.isIntercepting) { targetBracketsAnimFrameId = requestAnimationFrame(updateTargetBracketsPosition); }
+        return;
     }
-    if (window.isIntercepting) {
+
+    if (!f35State.targetBracketsElement || !f35State.targetBracketsElement.parentNode) {
+        let tb = document.querySelector('.target-brackets');
+        if (!tb) { tb = document.createElement('div'); tb.className = 'target-brackets'; document.body.appendChild(tb); }
+        f35State.targetBracketsElement = tb;
+        f35State.targetBracketsElement.style.animation = 'targetLock 0.75s ease-out forwards';
+    }
+
+    f35State.targetBracketsElement.style.opacity = '1';
+    const uavLiveRect = currentTargetElement.getBoundingClientRect();
+    if (uavLiveRect.width === 0) {
+        f35State.targetBracketsElement.style.opacity = '0';
         targetBracketsAnimFrameId = requestAnimationFrame(updateTargetBracketsPosition);
+        return;
     }
-    return;
-  }
+    const scrollX = window.scrollX || window.pageXOffset, scrollY = window.scrollY || window.pageYOffset;
+    f35State.targetBracketsElement.style.left = `${uavLiveRect.left + scrollX}px`;
+    f35State.targetBracketsElement.style.top = `${uavLiveRect.top + scrollY}px`;
+    f35State.targetBracketsElement.style.width = `${uavLiveRect.width}px`;
+    f35State.targetBracketsElement.style.height = `${uavLiveRect.height}px`;
 
-  if (!f35State.targetBracketsElement || !f35State.targetBracketsElement.parentNode) {
-      let tb = document.querySelector('.target-brackets');
-      if (!tb) {
-        tb = document.createElement('div');
-        tb.className = 'target-brackets';
-        document.body.appendChild(tb);
-      }
-      f35State.targetBracketsElement = tb;
-      f35State.targetBracketsElement.style.animation = 'targetLock 0.75s ease-out forwards';
-  }
-
-  f35State.targetBracketsElement.style.opacity = '1';
-  const uavLiveRect = f35State.uavElement.getBoundingClientRect();
-  if (uavLiveRect.width === 0 && uavLiveRect.height === 0) {
-      f35State.targetBracketsElement.style.opacity = '0';
-      targetBracketsAnimFrameId = requestAnimationFrame(updateTargetBracketsPosition);
-      return;
-  }
-
-  const scrollX = window.scrollX || window.pageXOffset;
-  const scrollY = window.scrollY || window.pageYOffset;
-
-  const bracketWidth = uavLiveRect.width * 0.4;
-  const bracketHeight = uavLiveRect.height * 0.9;
-  const bracketTargetLeft = uavLiveRect.left + scrollX + (uavLiveRect.width / 2) - (bracketWidth / 2) - 55;
-  const bracketTargetTop = uavLiveRect.top + scrollY + (uavLiveRect.height / 2) - (bracketHeight / 2);
-
-  f35State.targetBracketsElement.style.left = `${bracketTargetLeft}px`;
-  f35State.targetBracketsElement.style.top = `${bracketTargetTop}px`;
-  f35State.targetBracketsElement.style.width = `${bracketWidth}px`;
-  f35State.targetBracketsElement.style.height = `${bracketHeight}px`;
-
-  targetBracketsAnimFrameId = requestAnimationFrame(updateTargetBracketsPosition);
+    targetBracketsAnimFrameId = requestAnimationFrame(updateTargetBracketsPosition);
 }
 
-// ===== DUMMY FUNCTIONS (FROM ORIGINAL CONTEXT FOR COMPLETENESS) =====
-function initCustomCursor() { /* Placeholder */ }
-function initScrollAnimations() { /* Placeholder */ }
-function initThemeToggle() { /* Placeholder */ }
-function initMobileMenu() { /* Placeholder */ }
-function initPortfolioFilter() { /* Placeholder */ }
-function initPortfolioModal() { /* Placeholder */ }
-function initTerminalAnimation() { /* Placeholder */ }
-function initSkillsAnimation() { /* Placeholder */ }
-function initScrollToTop() { /* Placeholder */ }
+// ===== NEW AA SYSTEM FUNCTIONS =====
+// In your JavaScript file
+
+function createAndPositionAASystemElements() {
+    const ids = { cnc: 'aa-cnc', launcher: 'aa-launcher', radar: 'aa-radar', missile: 'aa-missile' };
+    const images = { cnc: 'AA_C&C.png', launcher: 'AA_launcher.png', radar: 'AA_radar.png', missile: 'AA_missile.png' };
+
+    for (const [key, id] of Object.entries(ids)) {
+        if (!aaState.elements[key]) {
+            let el = document.getElementById(id);
+            if (!el) { el = document.createElement('div'); el.id = id; el.className = `aa-system-element ${id}`; document.body.appendChild(el); }
+            aaState.elements[key] = el;
+        }
+        const el = aaState.elements[key];
+        // The 'position: absolute' is now handled by your CSS file, which is better.
+        el.style.zIndex = '40'; 
+        el.style.opacity = '0';
+        el.style.transition = `opacity ${aaState.config.deployDuration / 2000}s ease-in-out`;
+        if (images[key]) { el.style.backgroundImage = `url('./assets/images/${images[key]}')`; }
+    }
+
+    // ===== NEW DYNAMIC POSITIONING LOGIC =====
+
+    // Get the current scroll position and viewport height
+    const scrollY = window.scrollY || window.pageYOffset;
+    const viewportHeight = window.innerHeight;
+
+    // --- Position C&C ---
+    const cnc = aaState.elements.cnc;
+    cnc.style.left = aaState.config.cnc.right; // CSS handles transform for centering
+    cnc.style.transform = 'translateX(-50%)'; // Center it based on the 'right: 50%' value
+    cnc.style.left = '50%';
+    cnc.style.top = `${scrollY + viewportHeight - 145 - 5}px`; // (scroll + screen height) - element height - bottom offset
+
+    // --- Position Launcher ---
+    const launcher = aaState.elements.launcher;
+    launcher.style.right = aaState.config.launcher.right;
+    launcher.style.top = `${scrollY + viewportHeight - 235 - 10}px`;
+
+    // --- Position Radar ---
+    const radar = aaState.elements.radar;
+    radar.style.left = aaState.config.radar.left;
+    radar.style.transform = 'scaleX(-1)'; // Flip radar horizontally
+    radar.style.top = `${scrollY + viewportHeight - 220 - 10}px`;
+}
+
+function startAAIntercept(uavData) {
+    if (aaState.mode !== 'IDLE') return;
+    resetGlobalAnimationState();
+    createAndPositionAASystemElements();
+    aaState.targetUAVObject = uavData;
+    aaState.missilesRemaining = 4;
+    aaState.mode = 'DEPLOYING';
+    aaState.timeInMode = performance.now();
+    window.isIntercepting = true;
+    if (!targetBracketsAnimFrameId) { targetBracketsAnimFrameId = requestAnimationFrame(updateTargetBracketsPosition); }
+
+    setTimeout(() => {
+        if (aaState.mode !== 'DEPLOYING') return;
+        ['cnc', 'launcher', 'radar'].forEach(key => { aaState.elements[key].style.opacity = '1'; });
+        showSystemMessage("RADAR LOCK ACQUIRED", 1500);
+        const radarLine = document.createElement('div');
+        radarLine.className = 'radar-line';
+        document.body.appendChild(radarLine);
+        aaState.elements.radarLine = radarLine;
+    }, 100);
+
+    aaSystemUpdateId = requestAnimationFrame(runAASystem);
+}
+window.startAAIntercept = startAAIntercept;
+
+function runAASystem(timestamp) {
+    const elapsed = timestamp - aaState.timeInMode;
+    if (!aaState.targetUAVObject || !aaState.targetUAVObject.alive) {
+        if (aaState.mode !== 'DISENGAGING' && aaState.mode !== 'IDLE') {
+             showSystemMessage("TARGET LOST. AA STANDING DOWN.", 2000);
+             aaState.mode = 'DISENGAGING'; aaState.timeInMode = performance.now();
+        }
+    }
+    
+    switch (aaState.mode) {
+        case 'DEPLOYING':
+            if (elapsed > aaState.config.deployDuration) { aaState.mode = 'TRACKING'; aaState.timeInMode = timestamp; }
+            break;
+        case 'TRACKING':
+            updateRadarLine();
+            if (elapsed > aaState.config.trackingDuration) { aaState.mode = 'FIRING'; aaState.timeInMode = timestamp; aaState.lastFiredTimestamp = 0; }
+            break;
+        case 'FIRING':
+            updateRadarLine();
+            if (aaState.missilesRemaining > 0 && !aaState.missileInFlight) {
+                if (timestamp - aaState.lastFiredTimestamp > aaState.config.reloadDuration) {
+                    showSystemMessage(`FIRING MISSILE ${5 - aaState.missilesRemaining}/4...`, 1000);
+                    launchAAMissile(); aaState.lastFiredTimestamp = timestamp;
+                }
+            } else if (aaState.missilesRemaining <= 0 && !aaState.missileInFlight) {
+                showSystemMessage("MUNITIONS EXPENDED. DISENGAGING.", 2500);
+                aaState.mode = 'DISENGAGING'; aaState.timeInMode = timestamp;
+            }
+            break;
+        case 'DISENGAGING':
+            if (elapsed < 50) {
+                 ['cnc', 'launcher', 'radar', 'radarLine'].forEach(key => { if (aaState.elements[key]) aaState.elements[key].style.opacity = '0'; });
+                if (targetBracketsAnimFrameId) { cancelAnimationFrame(targetBracketsAnimFrameId); targetBracketsAnimFrameId = null; }
+                if(f35State.targetBracketsElement) f35State.targetBracketsElement.style.opacity = '0';
+            }
+            if (elapsed > aaState.config.disengageDuration) { resetGlobalAnimationState(); return; }
+            break;
+    }
+    if (aaState.mode !== 'IDLE') { aaSystemUpdateId = requestAnimationFrame(runAASystem); }
+}
+
+function updateRadarLine() {
+    const line = aaState.elements.radarLine;
+    const radar = aaState.elements.radar;
+    const uav = aaState.targetUAVObject;
+    if (!line || !radar || !uav || !uav.element) return;
+    
+    // --- Get current scroll position ---
+    const scrollY = window.scrollY || window.pageYOffset;
+    const scrollX = window.scrollX || window.pageXOffset;
+
+    // --- Calculate the radar's position ON THE PAGE ---
+    const radarRect = radar.getBoundingClientRect();
+    // Start point: center of radar element (relative to screen) + scroll distance + offset
+    const startX = radarRect.left + scrollX + (radarRect.width / 2) + aaState.config.radarLineStartOffset.x;
+    const startY = radarRect.top + scrollY + (radarRect.height / 2) + aaState.config.radarLineStartOffset.y;
+
+    // --- UAV's position is already relative to the page ---
+    const endX = uav.x + aaState.config.radarLineEndOffset.x;
+    const endY = uav.y + aaState.config.radarLineEndOffset.y;
+
+    // --- Calculations remain the same ---
+    const dx = endX - startX;
+    const dy = endY - startY;
+    const distance = Math.sqrt(dx * dx + dy * dy);
+    const angle = Math.atan2(dy, dx) * 180 / Math.PI;
+
+    line.style.left = `${startX}px`;
+    line.style.top = `${startY}px`;
+    line.style.width = `${distance}px`;
+    line.style.transform = `rotate(${angle}deg)`;
+    line.style.transformOrigin = 'left center';
+    line.style.opacity = '1';
+}
+
+function launchAAMissile() {
+    aaState.missileInFlight = true; aaState.missilesRemaining--;
+    const { missile, launcher } = aaState.elements;
+    const launcherRect = launcher.getBoundingClientRect();
+    const slotIndex = 3 - aaState.missilesRemaining;
+    const slot = aaState.config.launcherMissileSlots[slotIndex];
+    if (!slot) { aaState.missileInFlight = false; return; }
+
+    const scrollY = window.scrollY || window.pageYOffset;
+    const scrollX = window.scrollX || window.pageXOffset;
+
+    const state = aaState.missileFlightState;
+
+    state.x = launcherRect.left + scrollX + slot.x;
+    state.y = launcherRect.top + scrollY + slot.y;
+
+    state.currentAngleDeg = aaState.config.missileInitialAngle;
+    state.framesSinceLaunch = 0; state.homingActive = true;
+    
+    const initialAngleRad = state.currentAngleDeg * Math.PI / 180, initialSpeed = 2.0;
+    state.velocityX = Math.cos(initialAngleRad) * initialSpeed;
+    state.velocityY = Math.sin(initialAngleRad) * initialSpeed;
+
+    missile.style.left = `${state.x}px`; missile.style.top = `${state.y}px`;
+    missile.style.transform = `rotate(${state.currentAngleDeg}deg)`; missile.style.opacity = '1';
+
+ if (aa_smokeIntervalId) clearInterval(aa_smokeIntervalId);
+    aa_smokeIntervalId = setInterval(() => {
+        if (missile.style.opacity === '0' || !window.isIntercepting) {
+            clearInterval(aa_smokeIntervalId);
+            aa_smokeIntervalId = null;
+            return;
+        }
+        
+        // 1. Define the dimensions for calculation
+        const missileWidth = 76; // From your #aa-missile CSS
+        const smokePuffSize = 10; // From your .smoke-trail CSS
+
+        // 2. Calculate the missile's current center point
+        const missileCenterX = state.x + missileWidth / 2;
+        const missileCenterY = state.y + (10 / 2); // 10 is missile height
+
+        // 3. Convert the missile's angle to radians for trigonometry
+        const angleRad = state.currentAngleDeg * Math.PI / 180;
+
+        // 4. Calculate the tail's position by going backwards from the center
+        // We use cosine for the x-offset and sine for the y-offset.
+        const tailX = missileCenterX - Math.cos(angleRad) * (missileWidth / 2);
+        const tailY = missileCenterY - Math.sin(angleRad) * (missileWidth / 2);
+        
+        // 5. Create the smoke element
+        const smokeTrail = document.createElement('div');
+        smokeTrail.className = 'smoke-trail';
+        
+        // 6. Position the smoke, adjusting for its own size to center it on the tail
+        smokeTrail.style.left = `${tailX - (smokePuffSize / 2)}px`;
+        smokeTrail.style.top = `${tailY - (smokePuffSize / 2)}px`;
+        
+        document.body.appendChild(smokeTrail);
+        smokeTrail.addEventListener('animationend', () => {
+            if (smokeTrail.parentNode) smokeTrail.remove();
+        });
+    }, 50);
+
+    animateAAMissile();
+}
+
+function animateAAMissile() {
+    const state = aaState.missileFlightState, missile = aaState.elements.missile, target = aaState.targetUAVObject;
+    if (!target || !target.alive || state.framesSinceLaunch > 400) {
+        missile.style.opacity = '0'; aaState.missileInFlight = false;
+        if(state.framesSinceLaunch > 400) showSystemMessage("MISSILE SELF-DESTRUCTED.", 1500);
+        if (aa_missileAnimFrameId) cancelAnimationFrame(aa_missileAnimFrameId); aa_missileAnimFrameId = null;
+        return;
+    }
+    state.framesSinceLaunch++;
+    const frameCount = state.framesSinceLaunch;
+
+    // --- NEW: Multi-Phase Flight Path Logic ---
+    const straightenFrames = aaState.config.ascentStraightenFrames;
+    const totalAscentFrames = straightenFrames + aaState.config.ascentBoostFrames;
+
+    // Phase 1: Straightening Ascent (e.g., frames 1-40)
+    if (frameCount <= straightenFrames) {
+        const progress = frameCount / straightenFrames;
+        const startAngle = aaState.config.missileInitialAngle;
+        const endAngle = -90; // Straight up
+        state.currentAngleDeg = startAngle + (endAngle - startAngle) * progress;
+    }
+    // Phase 2: Vertical Boost (e.g., frames 41-70)
+    else if (frameCount <= totalAscentFrames) {
+        state.currentAngleDeg = -90;
+    }
+    // Phase 3: Homing (This is your original logic, now placed here)
+    else {
+        // Using your custom values
+        const HOMING_TURN_RATE = 1.5; 
+        const dxToTarget = target.x - state.x;
+        const dyToTarget = target.y - state.y;
+        
+        const angleToTargetDeg = Math.atan2(dyToTarget, dxToTarget) * 180 / Math.PI;
+        let angleDiff = angleToTargetDeg - state.currentAngleDeg;
+        while (angleDiff > 180) angleDiff -= 360; while (angleDiff < -180) angleDiff += 360;
+        
+        const turnAmount = Math.max(-HOMING_TURN_RATE, Math.min(HOMING_TURN_RATE, angleDiff));
+        state.currentAngleDeg = (state.currentAngleDeg + turnAmount + 360) % 360;
+    }
+
+    // --- Physics Application (Runs for every phase) ---
+    // Using your custom values
+    const BOOSTER_ACCELERATION = 0.3;
+    const MAX_MISSILE_SPEED = 6.0;
+
+    const thrustAngleRad = state.currentAngleDeg * Math.PI / 180;
+    state.velocityX += Math.cos(thrustAngleRad) * BOOSTER_ACCELERATION;
+    state.velocityY += Math.sin(thrustAngleRad) * BOOSTER_ACCELERATION;
+    const currentSpeed = Math.sqrt(state.velocityX ** 2 + state.velocityY ** 2);
+    if (currentSpeed > MAX_MISSILE_SPEED) {
+        const speedFactor = MAX_MISSILE_SPEED / currentSpeed;
+        state.velocityX *= speedFactor; state.velocityY *= speedFactor;
+    }
+    // Update the missile's position in the state
+    state.x += state.velocityX; 
+    state.y += state.velocityY;
+
+    // --- MOVED: Collision Check (Now happens AFTER position is updated) ---
+    const dxToTarget = target.x - state.x;
+    const dyToTarget = target.y - state.y;
+    if (Math.sqrt(dxToTarget**2 + dyToTarget**2) < target.width / 2) {
+        // This is your full, unchanged explosion and cleanup logic
+        const explosion = document.querySelector('.explosion'); 
+        if (explosion) {
+            explosion.style.left = `${target.x - explosion.offsetWidth / 2}px`;
+            explosion.style.top = `${target.y - explosion.offsetHeight / 2 - 55}px`;
+            explosion.style.opacity = '1';
+            explosion.style.animation = 'none';
+            let currentExplosionFrame = 0;
+            function animateExplosionStep() {
+                if (currentExplosionFrame >= 48) {
+                    if (explosion.parentNode) explosion.style.opacity = '0';
+                    return;
+                }
+                const col = currentExplosionFrame % 8;
+                const row = Math.floor(currentExplosionFrame / 8);
+                explosion.style.backgroundPositionX = `-${col * 240}px`;
+                explosion.style.backgroundPositionY = `-${row * 240}px`;
+                currentExplosionFrame++;
+                aa_explosionTimeoutId = setTimeout(animateExplosionStep, 800 / 48);
+            }
+            if (aa_explosionTimeoutId) clearTimeout(aa_explosionTimeoutId);
+            animateExplosionStep();
+        }
+        handleUAVDestroyedVisuals(target, true);
+        showSystemMessage("TARGET DESTROYED!", 2000);
+        missile.style.opacity = '0';
+        aaState.missileInFlight = false;
+        aaState.mode = 'DISENGAGING';
+        aaState.timeInMode = performance.now();
+        if (aa_missileAnimFrameId) cancelAnimationFrame(aa_missileAnimFrameId);
+        aa_missileAnimFrameId = null;
+        return; // End the function here on impact
+    }
+    
+    // --- Render the missile at its new position ---
+    missile.style.left = `${state.x}px`; missile.style.top = `${state.y}px`;
+    missile.style.transform = `rotate(${state.currentAngleDeg}deg)`;
+    aa_missileAnimFrameId = requestAnimationFrame(animateAAMissile);
+}
+
+// ===== DUMMY FUNCTIONS & INITIALIZATION =====
+function initCustomCursor() { /* Placeholder */ } function initScrollAnimations() { /* Placeholder */ } function initThemeToggle() { /* Placeholder */ } function initMobileMenu() { /* Placeholder */ } function initPortfolioFilter() { /* Placeholder */ } function initPortfolioModal() { /* Placeholder */ } function initTerminalAnimation() { /* Placeholder */ } function initSkillsAnimation() { /* Placeholder */ } function initScrollToTop() { /* Placeholder */ }
 
 document.addEventListener('DOMContentLoaded', () => {
-  initCustomCursor();
-  initScrollAnimations();
-  initThemeToggle();
-  initMobileMenu();
-  initPortfolioFilter();
-  initPortfolioModal();
-  initTerminalAnimation();
-  initSkillsAnimation();
-  initScrollToTop();
+  initCustomCursor(); initScrollAnimations(); initThemeToggle(); initMobileMenu(); initPortfolioFilter(); initPortfolioModal(); initTerminalAnimation(); initSkillsAnimation(); initScrollToTop();
+
+  ['.f35', '.missile', '.explosion'].forEach(selector => {
+      if (!document.querySelector(selector)) {
+          const el = document.createElement('div');
+          el.className = selector.substring(1);
+          document.body.appendChild(el);
+          console.warn(`'${selector}' not found, created a dummy element.`);
+      }
+  });
 
   resetGlobalAnimationState();
-  f35State.mode = 'IDLE';
-  window.isIntercepting = false;
-
-  if (!document.querySelector('.f35')) {
-    const f35Div = document.createElement('div'); f35Div.className = 'f35'; document.body.appendChild(f35Div);
-    console.warn("'.f35' element was not found in HTML, created a dummy one. Please ensure it exists in your HTML with appropriate styles.");
-  }
-  if (!document.querySelector('.missile')) {
-    const missileDiv = document.createElement('div'); missileDiv.className = 'missile'; document.body.appendChild(missileDiv);
-    console.warn("'.missile' element was not found in HTML, created a dummy one. Please ensure it exists in your HTML with appropriate styles.");
-  }
-  if (!document.querySelector('.explosion')) {
-    const explosionDiv = document.createElement('div'); explosionDiv.className = 'explosion'; document.body.appendChild(explosionDiv);
-    console.warn("'.explosion' element was not found in HTML, created a dummy one. Please ensure it exists in your HTML with appropriate styles.");
-  }
-
+  
   uavState.lastTimestamp = performance.now();
   runUAVSystem(uavState.lastTimestamp);
 });
