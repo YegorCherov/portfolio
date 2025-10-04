@@ -372,6 +372,121 @@ function resetGlobalAnimationState() {
     window.isIntercepting = false;
 }
 
+/** Cancels the main F-35 flight animation loop. */
+function cancelF35FlightAnimation() {
+    if (window.f35FlightAnimFrameId) {
+        cancelAnimationFrame(window.f35FlightAnimFrameId);
+        window.f35FlightAnimFrameId = null;
+    }
+}
+
+/** Cancels the missile flight animation and its associated effects (smoke, explosion). */
+function cancelF35MissileSequence() {
+    if (window.missileAnimFrameId) {
+        cancelAnimationFrame(window.missileAnimFrameId);
+        window.missileAnimFrameId = null;
+    }
+    if (window.smokeIntervalId) {
+        clearInterval(window.smokeIntervalId);
+        window.smokeIntervalId = null;
+    }
+    if (window.explosionTimeoutId) {
+        clearTimeout(window.explosionTimeoutId);
+        window.explosionTimeoutId = null;
+    }
+}
+
+/** Cancels the target brackets animation loop. */
+function cancelF35TargetingAnimation() {
+    if (window.targetBracketsAnimFrameId) {
+        cancelAnimationFrame(window.targetBracketsAnimFrameId);
+        window.targetBracketsAnimFrameId = null;
+    }
+}
+
+// --- F35: Granular State and DOM Reset Functions ---
+
+/** Resets the F-35's internal state object to its default values. */
+function resetF35State() {
+    f35State.hasFired = false;
+    f35State.timeInMode = 0;
+    f35State.spriteMirrorX = false;
+    f35State.mode = 'IDLE';
+    if (f35State.missileFlightState) {
+        f35State.missileFlightState.spriteMirrorX = false;
+    }
+}
+
+/** Hides and resets the visual style of all F-35 related DOM elements. */
+function resetF35DOMElements() {
+    const f35 = document.querySelector('.f35');
+    if (f35) {
+        f35.style.opacity = '0';
+        f35.classList.remove('animating');
+    }
+    const missile = document.querySelector('.missile');
+    if (missile) {
+        missile.style.opacity = '0';
+    }
+    const explosion = document.querySelector('.explosion');
+    if (explosion) {
+        explosion.style.opacity = '0';
+        explosion.style.animation = 'none';
+        explosion.style.backgroundPositionX = '0px';
+        explosion.style.backgroundPositionY = '0px';
+    }
+    const tb = document.querySelector('.target-brackets');
+    if (tb) {
+        tb.remove(); // Or tb.style.opacity = '0' if you reuse it
+    }
+    f35State.targetBracketsElement = null;
+}
+
+
+// --- AA System: Granular Cancellation and Reset Functions (Following the same pattern) ---
+
+/** Cancels all Anti-Aircraft system animations and intervals. */
+function cancelAASystemAnimations() {
+    if (window.aaSystemUpdateId) {
+        cancelAnimationFrame(window.aaSystemUpdateId);
+        window.aaSystemUpdateId = null;
+    }
+    if (window.aa_missileAnimFrameId) {
+        cancelAnimationFrame(window.aa_missileAnimFrameId);
+        window.aa_missileAnimFrameId = null;
+    }
+    if (window.aa_smokeIntervalId) {
+        clearInterval(window.aa_smokeIntervalId);
+        window.aa_smokeIntervalId = null;
+    }
+    if (window.aa_explosionTimeoutId) {
+        clearTimeout(window.aa_explosionTimeoutId);
+        window.aa_explosionTimeoutId = null;
+    }
+}
+
+/** Resets the AA system's internal state object. */
+function resetAASystemState() {
+    aaState.mode = 'IDLE';
+    aaState.missileInFlight = false;
+}
+
+/** Hides and resets the visual style of all AA system related DOM elements. */
+function resetAASystemDOMElements() {
+    if (aaState.elements.radarLine && aaState.elements.radarLine.parentNode) {
+        aaState.elements.radarLine.remove();
+        aaState.elements.radarLine = null;
+    }
+    Object.values(aaState.elements).forEach(el => {
+        if (el) el.style.opacity = '0';
+    });
+    const aa_explosion = document.querySelector('.aa-explosion');
+    if (aa_explosion) {
+        aa_explosion.style.opacity = '0';
+    }
+}
+
+
 function showSystemMessage(message, duration = 2000) {
     let systemMessagesContainer = document.querySelector('.system-messages');
     if (!systemMessagesContainer) {
@@ -394,7 +509,7 @@ function showSystemMessage(message, duration = 2000) {
     }, duration);
 }
 
-// ===== F35 FLIGHT/INTERCEPT FUNCTIONS (RESTORED) =====
+// ===== F35 FLIGHT/INTERCEPT FUNCTIONS (RESTORED & MODIFIED) =====
 function updateF35Flight() {
     if (!f35State.element || f35State.mode === 'IDLE') {
         if (f35FlightAnimFrameId) cancelAnimationFrame(f35FlightAnimFrameId);
@@ -409,11 +524,18 @@ function updateF35Flight() {
         case 'ENTERING':
             const startX = f35State.x;
             const startY = f35State.y;
-            const endX = (startX < window.innerWidth / 2) ? window.innerWidth + 200 : -200;
-            const endY = startY + (Math.random() * 100 - 50);
-            const controlX = window.innerWidth / 2;
-            const controlY = Math.min(startY, endY) - (150 + Math.random() * 150);
 
+            // --- MODIFICATION START ---
+            // The destination is now the top-middle of the screen.
+            const endX = window.innerWidth / 2 + (Math.random() * 300 - 150); // Center with some variance
+            const endY = -200; // Well above the top of the screen
+
+            // The control point is adjusted to create a 1/x-like curve.
+            // It will be placed to make the F-35 dip down before climbing sharply.
+            const controlX = startX + (endX - startX) * 0.5; // Positioned between start and end X
+            const controlY = startY + (150 + Math.random() * 150); // Positioned below the start Y to create the dip
+            // --- MODIFICATION END ---
+            
             f35State.arcPath = { p0: { x: startX, y: startY }, p1: { x: controlX, y: controlY }, p2: { x: endX, y: endY } };
             f35State.arcProgress = 0;
             f35State.mode = 'FLYING_ARC';
@@ -421,7 +543,7 @@ function updateF35Flight() {
             break;
 
         case 'FLYING_ARC':
-            const FIRING_DELAY_FRAMES = 120;
+            const FIRING_DELAY_FRAMES = 100;
             if (f35State.timeInMode > FIRING_DELAY_FRAMES && !f35State.hasFired) {
                 const targetUAVObject = f35State.uavElement ? uavState.uavs.find(u => u.element === f35State.uavElement) : null;
                 if (targetUAVObject && targetUAVObject.alive) {
@@ -431,12 +553,13 @@ function updateF35Flight() {
                 }
             }
 
-            const arcTraversalSpeed = 0.002;
+            // Increase speed slightly for a more dynamic feel
+            const arcTraversalSpeed = 0.005; 
             f35State.arcProgress += arcTraversalSpeed;
 
             if (f35State.arcProgress >= 1) {
                 f35State.mode = 'IDLE';
-                resetGlobalAnimationState();
+                resetF35State();
                 return;
             }
 
@@ -456,13 +579,13 @@ function updateF35Flight() {
             break;
             
         case 'DISENGAGING':
-            if (!f35State.arcPath) { f35State.mode = 'IDLE'; resetGlobalAnimationState(); return; }
+            if (!f35State.arcPath) { f35State.mode = 'IDLE'; resetF35State(); return; }
             f35State.mode = 'FLYING_ARC';
             break;
 
         default:
             f35State.mode = 'IDLE';
-            resetGlobalAnimationState();
+            resetF35State();
             return;
     }
 
