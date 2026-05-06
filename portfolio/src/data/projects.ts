@@ -207,7 +207,7 @@ const projects: Project[] = [
     categoryLabel: "3D Model",
     title: "Anti mosquito window",
     image: "/assets/images/models_images/Anti mosquito window.png",
-    stlUrl: ["/assets/models/Window fist half.stl", "/assets/models/Window second half.stl"],
+    stlUrl: ["/assets/models/Window first half.stl", "/assets/models/Window second half.stl"],
     description: "Window attachment system designed to reduce mosquito entry while maintaining airflow.",
     technologies: ["CAD", "3D Printing"],
     githubUrl: "https://www.printables.com/@Rozcy_765706/models",

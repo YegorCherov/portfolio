@@ -44,7 +44,7 @@ const STLViewer: React.FC<STLViewerProps> = ({ urls }) => {
             </group>
           </Stage>
         </Suspense>
-        <OrbitControls autoRotate enableZoom={true} makeDefault />
+        <OrbitControls enableZoom={true} makeDefault />
       </Canvas>
     </div>
   );
