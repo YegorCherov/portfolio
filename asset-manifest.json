@@ -1,7 +1,7 @@
 {
   "files": {
     "main.css": "/static/css/main.5012d790.css",
-    "main.js": "/static/js/main.03a53de8.js",
+    "main.js": "/static/js/main.3a254677.js",
     "static/media/explosion.png": "/static/media/explosion.605ee8d6696206ef06d4.png",
     "static/media/f35.png": "/static/media/f35.d368f2b9ce1732a48b9c.png",
     "static/media/Missile_ON.png": "/static/media/Missile_ON.116638f5c340fcdc69ff.png",
@@ -13,10 +13,10 @@
     "static/media/AA_radar.png": "/static/media/AA_radar.6e4c10cf76a8e30a5461.png",
     "index.html": "/index.html",
     "main.5012d790.css.map": "/static/css/main.5012d790.css.map",
-    "main.03a53de8.js.map": "/static/js/main.03a53de8.js.map"
+    "main.3a254677.js.map": "/static/js/main.3a254677.js.map"
   },
   "entrypoints": [
     "static/css/main.5012d790.css",
-    "static/js/main.03a53de8.js"
+    "static/js/main.3a254677.js"
   ]
 }
