@@ -1,13 +1,14 @@
 export interface Project {
   id: string;
   title: string;
-  category: 'game' | 'ai' | 'cyber' | 'web' | 'fullstack' | 'automation';
+  category: 'game' | 'ai' | 'cyber' | 'web' | 'fullstack' | 'automation' | '3d';
   categoryLabel: string;
   image: string;
   description: string;
   technologies: string[];
   githubUrl: string;
   demoUrl?: string;
+  stlUrl?: string;
 }
 
 const projects: Project[] = [
@@ -134,7 +135,173 @@ const projects: Project[] = [
     description: 'A responsive blog website with modern design and features like content management, user authentication, and commenting.',
     technologies: ['React', 'Node.js', 'MongoDB', 'Express'],
     githubUrl: 'https://github.com/YegorCherov'
+  },
+   {
+    id: "fpv-quad-drone-retractable-legs",
+    category: "3d",
+    categoryLabel: "3D Model",
+    title: "FPV quad drone retractable legs",
+    image: "/images/FPV quad drone retractable legs.jpg",
+    stlUrl: "/models/FPV quad drone retractable legs.stl",
+    description: "Retractable landing gear designed for FPV quadcopters to improve portability and landing stability.",
+    technologies: ["Fusion 360", "3D Printing", "Mechanical Design"],
+    githubUrl: "#",
+  },
+  {
+    id: "hsw-500w-dremel-holder-v2",
+    category: "3d",
+    categoryLabel: "3D Model",
+    title: "HSW 500w Dremel Holder v2",
+    image: "/images/HSW 500w Dremel Holder v2.jpg",
+    stlUrl: "/models/HSW 500w Dremel Holder v2.stl",
+    description: "Improved holder for 500W rotary tools, optimized for Honeycomb Storage Wall mounting.",
+    technologies: ["Fusion 360", "3D Printing"],
+    githubUrl: "#",
+  },
+  {
+    id: "hsw-500w-dremel-holder",
+    category: "3d",
+    categoryLabel: "3D Model",
+    title: "HSW 500w Dremel Holder",
+    image: "/images/HSW 500w Dremel Holder.jpg",
+    stlUrl: "/models/HSW 500w Dremel Holder.stl",
+    description: "Wall-mounted holder for 500W rotary tool compatible with HSW systems.",
+    technologies: ["Fusion 360", "3D Printing"],
+    githubUrl: "#",
+  },
+  {
+    id: "vent-v5",
+    category: "3d",
+    categoryLabel: "3D Model",
+    title: "vent v5",
+    image: "/images/vent v5.jpg",
+    stlUrl: "/models/vent v5.stl",
+    description: "Parametric vent design optimized for airflow and print efficiency.",
+    technologies: ["CAD", "3D Printing"],
+    githubUrl: "#",
+  },
+  {
+    id: "oral-b-toothbrush-wall-mount",
+    category: "3d",
+    categoryLabel: "3D Model",
+    title: "Oral B toothbrush wall mount",
+    image: "/images/Oral B toothbrush wall mount.jpg",
+    stlUrl: "/models/Oral B toothbrush wall mount.stl",
+    description: "Wall-mounted holder for Oral-B toothbrushes for improved hygiene and space saving.",
+    technologies: ["Fusion 360", "3D Printing"],
+    githubUrl: "#",
+  },
+  {
+    id: "washing-machine-door-closer",
+    category: "3d",
+    categoryLabel: "3D Model",
+    title: "Washing machine door closer",
+    image: "/images/Washing machine door closer.jpg",
+    stlUrl: "/models/Washing machine door closer.stl",
+    description: "Mechanical solution to assist in closing or stabilizing washing machine doors.",
+    technologies: ["Mechanical Design", "3D Printing"],
+    githubUrl: "#",
+  },
+  {
+    id: "anti-mosquito-window",
+    category: "3d",
+    categoryLabel: "3D Model",
+    title: "Anti mosquito window",
+    image: "/images/Anti mosquito window.jpg",
+    stlUrl: "/models/Anti mosquito window.stl",
+    description: "Window attachment system designed to reduce mosquito entry while maintaining airflow.",
+    technologies: ["CAD", "3D Printing"],
+    githubUrl: "#",
+  },
+  {
+    id: "tarkov-usec-dogtag",
+    category: "3d",
+    categoryLabel: "3D Model",
+    title: "Tarkov Usec dogtag",
+    image: "/images/Tarkov Usec dogtag.jpg",
+    stlUrl: "/models/Tarkov Usec dogtag.stl",
+    description: "Replica dogtag inspired by Escape from Tarkov USEC faction.",
+    technologies: ["3D Modeling", "3D Printing"],
+    githubUrl: "#",
+  },
+  {
+    id: "kuugo-m4-front-license-plate-mount",
+    category: "3d",
+    categoryLabel: "3D Model",
+    title: "Kuugo M4 front license plate mount",
+    image: "/images/Kuugo M4 front license plate mount.jpg",
+    stlUrl: "/models/Kuugo M4 front license plate mount.stl",
+    description: "Front-mounted license plate holder for Kuugo M4 electric scooter.",
+    technologies: ["Fusion 360", "3D Printing"],
+    githubUrl: "#",
+  },
+  {
+    id: "mark4-v2-10-inch-sma-crsf-mount",
+    category: "3d",
+    categoryLabel: "3D Model",
+    title: "Mark4 V2 10 inch sma crsf mount",
+    image: "/images/Mark4 V2 10 inch sma crsf mount.jpg",
+    stlUrl: "/models/Mark4 V2 10 inch sma crsf mount.stl",
+    description: "Antenna mount for Mark4 V2 drone frame supporting SMA and CRSF setups.",
+    technologies: ["FPV Design", "3D Printing"],
+    githubUrl: "#",
+  },
+  {
+    id: "kuugo-m4-electric-scooter-internal-steering-tube",
+    category: "3d",
+    categoryLabel: "3D Model",
+    title: "Kuugo m4 Electric scooter internal steering tube",
+    image: "/images/Kuugo m4 Electric scooter internal steering tube.jpg",
+    stlUrl: "/models/Kuugo m4 Electric scooter internal steering tube.stl",
+    description: "Internal steering tube component replacement for Kuugo M4 scooter.",
+    technologies: ["Mechanical CAD", "3D Printing"],
+    githubUrl: "#",
+  },
+  {
+    id: "hsw-honeycomb-dt9205p-multimeter-holder",
+    category: "3d",
+    categoryLabel: "3D Model",
+    title: "HSW Honeycomb dt9205p multimeter holder",
+    image: "/images/HSW Honeycomb dt9205p multimeter holder.jpg",
+    stlUrl: "/models/HSW Honeycomb dt9205p multimeter holder.stl",
+    description: "Multimeter holder designed for DT9205P and compatible with HSW system.",
+    technologies: ["Fusion 360", "3D Printing"],
+    githubUrl: "#",
+  },
+  {
+    id: "hsw-honeycomb-drill-battery-holder",
+    category: "3d",
+    categoryLabel: "3D Model",
+    title: "HSW Honeycomb Drill battery holder",
+    image: "/images/HSW Honeycomb Drill battery holder.jpg",
+    stlUrl: "/models/HSW Honeycomb Drill battery holder.stl",
+    description: "Battery holder for power drills designed for Honeycomb Storage Wall.",
+    technologies: ["CAD", "3D Printing"],
+    githubUrl: "#",
+  },
+  {
+    id: "10-inch-mark4-v2-aliexpress-fpv-gps-front-mount",
+    category: "3d",
+    categoryLabel: "3D Model",
+    title: "10 inch mark 4 v2 aliexpress fpv gps front mount",
+    image: "/images/10 inch mark 4 v2 aliexpress fpv gps front mount.jpg",
+    stlUrl: "/models/10 inch mark 4 v2 aliexpress fpv gps front mount.stl",
+    description: "Front-mounted GPS holder for 10-inch Mark4 V2 FPV drone setups.",
+    technologies: ["FPV Design", "3D Printing"],
+    githubUrl: "#",
+  },
+  {
+    id: "desk-lamp-that-slides-under-the-monitor-arm",
+    category: "3d",
+    categoryLabel: "3D Model",
+    title: "Desk lamp that slides under the monitor arm",
+    image: "/images/Desk lamp that slides under the monitor arm.jpg",
+    stlUrl: "/models/Desk lamp that slides under the monitor arm.stl",
+    description: "Compact desk lamp designed to integrate with monitor arms to save space.",
+    technologies: ["Product Design", "3D Printing"],
+    githubUrl: "#",
   }
+  
 ];
 
 export default projects;

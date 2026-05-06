@@ -71,8 +71,11 @@ const Contact: React.FC = () => {
 
   return (
     <section className="contact section" id="contact">
+      {/* Section ID Tag */}
+      <span className="section-id">SEC-003: CONTACT</span>
+
       <div className="container">
-        <div className="section-title">
+        <div className="section-title" data-coordinates="[51.5074° N, 0.1278° W]">
           <h2>Get In Touch</h2>
         </div>
         
@@ -82,7 +85,11 @@ const Contact: React.FC = () => {
               <i className="ri-mail-line contact__card-icon"></i>
               <div>
                 <h3 className="contact__card-title">Email</h3>
+                {/* Add a space here */}
+                {'\u00A0\u00A0\u00A0'}
                 <span className="contact__card-data">Yegorcherov@gmail.com</span>
+                {/* And add a space here */}
+                {'\u00A0\u00A0\u00A0\u00A0\u00A0\u00A0\u00A0\u00A0\u00A0\u00A0\u00A0\u00A0\u00A0\u00A0\u00A0\u00A0\u00A0\u00A0\u00A0\u00A0\u00A0'}
                 <a href="mailto:Yegorcherov@gmail.com" className="contact__card-button">
                   Write me <i className="ri-arrow-right-line"></i>
                 </a>
@@ -93,7 +100,11 @@ const Contact: React.FC = () => {
               <i className="ri-linkedin-box-line contact__card-icon"></i>
               <div>
                 <h3 className="contact__card-title">LinkedIn</h3>
+                                {/* Add a space here */}
+                {'\u00A0\u00A0\u00A0'}
                 <span className="contact__card-data">Yegor Cherov</span>
+                                {/* And add a space here */}
+                {'\u00A0\u00A0\u00A0\u00A0\u00A0\u00A0\u00A0\u00A0\u00A0\u00A0\u00A0\u00A0\u00A0\u00A0\u00A0\u00A0\u00A0\u00A0\u00A0\u00A0\u00A0\u00A0\u00A0\u00A0\u00A0\u00A0\u00A0\u00A0\u00A0\u00A0\u00A0'}
                 <a href="https://www.linkedin.com/in/yegor-cherov" target="_blank" rel="noopener noreferrer" className="contact__card-button">
                   Connect <i className="ri-arrow-right-line"></i>
                 </a>
@@ -104,7 +115,11 @@ const Contact: React.FC = () => {
               <i className="ri-github-line contact__card-icon"></i>
               <div>
                 <h3 className="contact__card-title">GitHub</h3>
+                                                {/* Add a space here */}
+                {'\u00A0\u00A0\u00A0'}
                 <span className="contact__card-data">YegorCherov</span>
+                                                {/* Add a space here */}
+                {'\u00A0\u00A0\u00A0\u00A0\u00A0\u00A0\u00A0\u00A0\u00A0\u00A0\u00A0\u00A0\u00A0\u00A0\u00A0\u00A0\u00A0\u00A0\u00A0\u00A0\u00A0\u00A0\u00A0\u00A0\u00A0\u00A0\u00A0\u00A0\u00A0'}
                 <a href="https://github.com/YegorCherov" target="_blank" rel="noopener noreferrer" className="contact__card-button">
                   View Profile <i className="ri-arrow-right-line"></i>
                 </a>

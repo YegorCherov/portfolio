@@ -8,7 +8,6 @@ import Home from './pages/Home';
 
 // Import scripts
 import { 
-  loadParticlesScript, 
   initCustomCursor, 
   initScrollAnimations, 
   initScrollToTop,
@@ -18,14 +17,6 @@ import {
 
 const App: React.FC = () => {
   useEffect(() => {
-    // Load external scripts
-    const particlesScript = document.createElement('script');
-    particlesScript.src = 'https://cdn.jsdelivr.net/particles.js/2.0.0/particles.min.js';
-    particlesScript.async = true;
-    particlesScript.onload = () => {
-      loadParticlesScript();
-    };
-    document.body.appendChild(particlesScript);
 
     // Load custom cursor
     const cursor = document.createElement('div');
@@ -46,21 +37,20 @@ const App: React.FC = () => {
     }, 500);
 
     return () => {
-      document.body.removeChild(particlesScript);
       if (cursor.parentNode) document.body.removeChild(cursor);
       if (cursorFollower.parentNode) document.body.removeChild(cursorFollower);
     };
   }, []);
 
   return (
-    <>
+    <div className="app-wrapper">
       <Header />
       <Home />
       <Footer />
       <a href="#" className="scrollup" id="scroll-up">
         <i className="ri-arrow-up-line"></i>
       </a>
-    </>
+    </div>
   );
 };
 

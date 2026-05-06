@@ -25,8 +25,11 @@ const Portfolio: React.FC = () => {
 
   return (
     <section className="portfolio section" id="portfolio">
+      {/* Section ID Tag */}
+      <span className="section-id">SEC-002: PORTFOLIO</span>
+
       <div className="container">
-        <div className="section-title">
+        <div className="section-title" data-coordinates="[40.7128° N, 74.0060° W]">
           <h2>My Portfolio</h2>
         </div>
         
@@ -37,6 +40,13 @@ const Portfolio: React.FC = () => {
             onClick={() => handleFilterClick('all')}
           >
             All
+          </button>
+          <button 
+            className={`portfolio__filter-btn ${activeFilter === '3d' ? 'active' : ''}`} 
+            data-filter="3d"
+            onClick={() => handleFilterClick('3d')}
+          >
+            3D Models
           </button>
           <button 
             className={`portfolio__filter-btn ${activeFilter === 'game' ? 'active' : ''}`} 

@@ -4,8 +4,15 @@ const Footer: React.FC = () => {
   const currentYear = new Date().getFullYear();
 
   return (
-    <footer className="footer">
+    <footer className="footer section">
+      {/* Section ID Tag */}
+      <span className="section-id"></span>
+
       <div className="container">
+        <div className="section-title" data-coordinates="[35.6895° N, 139.6917° E]">
+          <h2>End Transmission</h2>
+        </div>
+        
         <div className="footer__container">
           <div>
             <h3 className="footer__title">Yegor Cherov</h3>
@@ -18,8 +25,6 @@ const Footer: React.FC = () => {
             <h3 className="footer__title">Explore</h3>
             <ul className="footer__list">
               <li><a href="#home" className="footer__link">Home</a></li>
-              <li><a href="#about" className="footer__link">About</a></li>
-              <li><a href="#services" className="footer__link">Services</a></li>
               <li><a href="#portfolio" className="footer__link">Portfolio</a></li>
               <li><a href="#contact" className="footer__link">Contact</a></li>
             </ul>

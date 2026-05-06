@@ -26,6 +26,12 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, onClick }) => {
       <div className="portfolio__overlay">
         <h3 className="portfolio__title">{project.title}</h3>
         <p className="portfolio__category">{project.categoryLabel}</p>
+        {/* Add technical data readouts on hover */}
+        <div className="portfolio__data-readout">
+          <p>STATUS: <span className="status-indicator online">ONLINE</span></p>
+          <p>MISSION_ID: {project.id.toUpperCase()}</p>
+          <p>CATEGORY: {project.categoryLabel.toUpperCase()}</p>
+        </div>
         <div className="portfolio__btns">
           <a 
             href={project.githubUrl} 

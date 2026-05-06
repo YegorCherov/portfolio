@@ -44,16 +44,6 @@ const Header: React.FC = () => {
                 </a>
               </li>
               <li className="nav__item">
-                <a href="#about" className="nav__link" onClick={closeMenu}>
-                  About
-                </a>
-              </li>
-              <li className="nav__item">
-                <a href="#services" className="nav__link" onClick={closeMenu}>
-                  Services
-                </a>
-              </li>
-              <li className="nav__item">
                 <a href="#portfolio" className="nav__link" onClick={closeMenu}>
                   Portfolio
                 </a>
