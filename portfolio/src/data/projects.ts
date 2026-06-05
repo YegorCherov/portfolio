@@ -18,7 +18,7 @@ const projects: Project[] = [
     title: 'Apex FPV Payload Dropper',
     category: '3d',
     categoryLabel: '3D Model',
-    image: '/assets/images/Apex.png',
+    image: '/assets/images/Apex.jpeg',
     description: 'I designed a completely mechanical sequential payload dropper for FPV drones. By sequencing four Geneva mechanisms along a single shaft, it drops up to four independent payloads using just one servo and a 180 degree sweep. Instead of being locked to specific shapes, it accepts almost anything you can strap in with zip ties.',
     technologies: ['Fusion 360', '3D Printing', 'Mechanical Design', 'Engineering'],
     githubUrl: 'https://github.com/YegorCherov/Apex'
@@ -28,7 +28,7 @@ const projects: Project[] = [
     title: 'Peltier Water Cooled Sleeping Mat',
     category: 'automation',
     categoryLabel: 'Automation',
-    image: '/assets/images/Peltier.png',
+    image: '/assets/images/Peltier.jpeg',
     description: 'I set out to replace a loud commercial cooling mat with a proper water cooled setup. I built a custom loop using a Peltier module, a copper water block, and a brushless pump, all housed in a custom 3D printed case. It runs off an ESP32 with a web UI for temperature and fan control. While the single Peltier ultimately could not keep up with body heat, the system architecture and web integration worked perfectly.',
     technologies: ['ESP32', 'C++', 'Electronics', '3D Printing', 'Web UI'],
     githubUrl: 'https://github.com/YegorCherov/PBWCM'
