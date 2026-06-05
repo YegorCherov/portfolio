@@ -4,7 +4,7 @@ declare global {
   interface Window {
     triggerAerospaceAnimation: () => void;
     startF35Intercept: (visualUavElement: HTMLDivElement, clickedButton: HTMLDivElement) => void;
-    isIntercepting?: boolean; // For global animation lock
+    isIntercepting?: boolean;
   }
 }
 
@@ -39,6 +39,14 @@ const Hero: React.FC = () => {
     const uavElement = event.currentTarget.parentElement as HTMLDivElement;
     const buttonElement = event.currentTarget as HTMLDivElement;
 
+    // Remove the click-me indicator on the static element
+    if (uavElement) {
+      const clickMeLabel = uavElement.querySelector('.uav-click-me');
+      if (clickMeLabel) {
+        clickMeLabel.remove();
+      }
+    }
+
     if (uavElement && buttonElement && window.startF35Intercept) {
       window.startF35Intercept(uavElement, buttonElement);
     } else {
@@ -54,6 +62,9 @@ const Hero: React.FC = () => {
       <span className="section-id">SEC-001: HERO</span>
 
       <div className="uav" ref={uavVisualRef}>
+        {/* Flashing click-me target for static fallback */}
+        <div className="uav-click-me">CLICK ME</div>
+        
         <div
           className="uav-child-button"
           onClick={handleUAVButtonClick}

@@ -21,7 +21,6 @@ const ProjectModal: React.FC<ProjectModalProps> = ({ project, isActive, onClose 
 
     if (isActive) {
       previouslyFocusedElement.current = document.activeElement as HTMLElement;
-      // Directly set overflow — more reliable than a CSS class
       document.body.style.overflow = 'hidden';
       window.addEventListener('keydown', handleEsc);
 
@@ -73,7 +72,6 @@ const ProjectModal: React.FC<ProjectModalProps> = ({ project, isActive, onClose 
           {project.title}
         </h3>
         
-        {/* Only render media when active to prevent background resource loading */}
         {isActive && (
           project.stlUrl ? (
             <STLViewer urls={project.stlUrl} />
@@ -85,7 +83,7 @@ const ProjectModal: React.FC<ProjectModalProps> = ({ project, isActive, onClose 
               muted 
               playsInline 
               controls
-              className="portfolio__modal-img" 
+              className="portfolio__modal-video" /* Applied the new video-specific class */
             />
           ) : (
             <img src={project.image} alt={project.title} className="portfolio__modal-img" />
@@ -115,8 +113,6 @@ const ProjectModal: React.FC<ProjectModalProps> = ({ project, isActive, onClose 
     </div>
   );
 
-  // Render into document.body so position:fixed works from the viewport,
-  // not relative to the portfolio section
   return createPortal(modal, document.body);
 };
 

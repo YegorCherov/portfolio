@@ -87,12 +87,21 @@ function createUAVElement(uavData) {
     uavElement.style.opacity = '1';
     uavElement.style.zIndex = '50';
 
+    // Add the dynamic flashing label
+    const clickMeLabel = document.createElement('div');
+    clickMeLabel.className = 'uav-click-me';
+    clickMeLabel.innerText = 'CLICK ME';
+    uavElement.appendChild(clickMeLabel);
+
     const clickableArea = document.createElement('div');
     clickableArea.className = uavData.typeConfig.clickableChildClass;
     uavElement.appendChild(clickableArea);
 
-    // MODIFIED: Calls the new dispatcher function
+    // Call the dispatcher and remove the label
     clickableArea.addEventListener('click', () => {
+        if (clickMeLabel && clickMeLabel.parentNode) {
+            clickMeLabel.remove();
+        }
         initiateIntercept(uavData, uavElement);
     });
 

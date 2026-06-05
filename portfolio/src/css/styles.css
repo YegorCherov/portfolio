@@ -145,7 +145,6 @@ body {
     z-index: var(--z-background-elements, 1); 
     pointer-events: none; /* Child button handles clicks */
     transition: background-image var(--transition-normal), opacity 0.3s ease-out; /* Keep for theme and visibility changes */
-    /* transform-origin: center center; /* Useful if JS rotates */
 }
 
 .uav-child-button {
@@ -156,25 +155,50 @@ body {
     height: 100%;
     z-index: 10; /* Relative to .uav parent */
     background-color: transparent;
-    /* background-color: rgba(0, 255, 0, 0.2); */ /* --- UNCOMMENT FOR DEBUGGING BUTTON POSITION --- */
     cursor: none;
     pointer-events: auto;
-    
+}
+
+/* Flashing Indicator Element */
+.uav-click-me {
+    position: absolute;
+    top: -30px; /* Positioned directly above the UAV */
+    left: 50%;
+    transform: translateX(-50%);
+    font-family: monospace;
+    font-size: 11px;
+    font-weight: bold;
+    color: #ff3333; /* Red color scheme */
+    background: rgba(0, 0, 0, 0.8);
+    padding: 2px 6px;
+    border-radius: 3px;
+    border: 1px solid #ff3333;
+    white-space: nowrap;
+    pointer-events: none; /* Ensures clicks pass through to the button */
+    animation: uav-flash 1s infinite ease-in-out;
+    z-index: 15; /* Sits above standard UAV layers */
+}
+
+@keyframes uav-flash {
+    0%, 100% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.25;
+    }
 }
 
 .cursor.uav-target-hover {
-  background-color: var(--danger) !important; /* Use !important to ensure override */
-  /* Add any other specific styles for UAV hover, e.g., scale */
-  transform: translate(-50%, -50%) scale(1.5); /* Example from your .hover */
-  box-shadow: 0 0 8px var(--danger); /* Example */
+  background-color: var(--danger) !important;
+  transform: translate(-50%, -50%) scale(1.5);
+  box-shadow: 0 0 8px var(--danger);
 }
 
 .cursor-follower.uav-target-hover {
-  border-color: var(--danger) !important; /* Use !important */
-  width: 50px; /* Example */
-  height: 50px; /* Example */
-  border-width: 2px; /* Example */
-  /* animation: targetPulse 1.5s infinite alternate; */ /* If you want pulse */
+  border-color: var(--danger) !important;
+  width: 50px;
+  height: 50px;
+  border-width: 2px;
 }
 
 /* Declassified Watermark */
@@ -1402,4 +1426,71 @@ section.visible .section-title::before {
     /* For debugging, add a border to see the element even if the image fails to load */
     /* border: 1px dashed lime; */
 }
+}
+/* ==================== THEME-AWARE CUSTOM SCROLLBARS ==================== */
+
+/* --- Dark Theme Scrollbars (data-theme="dark") --- */
+html[data-theme="dark"]::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+html[data-theme="dark"]::-webkit-scrollbar-track {
+  background: #121212; /* Dark track background */
+}
+
+html[data-theme="dark"]::-webkit-scrollbar-thumb {
+  background: #2a2a2a; /* Dark thumb */
+  border-radius: 4px;
+  border: 1px solid #121212;
+}
+
+html[data-theme="dark"]::-webkit-scrollbar-thumb:hover {
+  background: #3a3a3a;
+}
+
+/* Firefox rules for Dark Theme */
+html[data-theme="dark"] {
+  scrollbar-width: thin;
+  scrollbar-color: #2a2a2a #121212;
+}
+
+
+/* --- Light Theme Scrollbars (data-theme="light") --- */
+html[data-theme="light"]::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+html[data-theme="light"]::-webkit-scrollbar-track {
+  background: #f4f4f4; /* Light track background */
+}
+
+html[data-theme="light"]::-webkit-scrollbar-thumb {
+  background: #c1c1c1; /* Light thumb */
+  border-radius: 4px;
+  border: 1px solid #f4f4f4;
+}
+
+html[data-theme="light"]::-webkit-scrollbar-thumb:hover {
+  background: #a8a8a8;
+}
+
+/* Firefox rules for Light Theme */
+html[data-theme="light"] {
+  scrollbar-width: thin;
+  scrollbar-color: #c1c1c1 #f4f4f4;
+}
+
+/* ==================== MODAL VIDEO CONSTRAINT ==================== */
+/* Ensure the video scales responsibly and matches the image styling */
+.portfolio__modal-video {
+  width: 100%;
+  max-width: 100%;
+  height: auto;
+  max-height: 450px; /* Constrains vertical height to prevent viewport overflow */
+  object-fit: contain; /* Retains aspect ratio without stretching or cropping */
+  border-radius: .5rem;
+  margin-bottom: 1rem;
+  display: block;
 }
