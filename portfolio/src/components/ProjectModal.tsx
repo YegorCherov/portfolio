@@ -21,6 +21,7 @@ const ProjectModal: React.FC<ProjectModalProps> = ({ project, isActive, onClose 
 
     if (isActive) {
       previouslyFocusedElement.current = document.activeElement as HTMLElement;
+      // Directly set overflow — more reliable than a CSS class
       document.body.style.overflow = 'hidden';
       window.addEventListener('keydown', handleEsc);
 
@@ -41,8 +42,7 @@ const ProjectModal: React.FC<ProjectModalProps> = ({ project, isActive, onClose 
     if (e.target === e.currentTarget) onClose();
   };
 
-  // Determine the image source based on active state
-  const imageSrc = isActive && project.gifUrl ? project.gifUrl : project.image;
+  const isVideo = project.image.toLowerCase().endsWith('.mp4');
 
   const modal = (
     <div
@@ -72,16 +72,26 @@ const ProjectModal: React.FC<ProjectModalProps> = ({ project, isActive, onClose 
         <h3 className="portfolio__modal-title" id={`modal-title-${project.id}`}>
           {project.title}
         </h3>
-        {project.stlUrl && isActive ? (
-          <STLViewer urls={project.stlUrl} />
-        ) : (
-          <img 
-            src={imageSrc} 
-            alt={project.title} 
-            className="portfolio__modal-img" 
-            loading="lazy"
-          />
+        
+        {/* Only render media when active to prevent background resource loading */}
+        {isActive && (
+          project.stlUrl ? (
+            <STLViewer urls={project.stlUrl} />
+          ) : isVideo ? (
+            <video 
+              src={project.image} 
+              autoPlay 
+              loop 
+              muted 
+              playsInline 
+              controls
+              className="portfolio__modal-img" 
+            />
+          ) : (
+            <img src={project.image} alt={project.title} className="portfolio__modal-img" />
+          )
         )}
+
         <p className="portfolio__modal-desc">{project.description}</p>
         <div className="portfolio__modal-list">
           {project.technologies.map((tech, index) => (
@@ -105,6 +115,8 @@ const ProjectModal: React.FC<ProjectModalProps> = ({ project, isActive, onClose 
     </div>
   );
 
+  // Render into document.body so position:fixed works from the viewport,
+  // not relative to the portfolio section
   return createPortal(modal, document.body);
 };
 

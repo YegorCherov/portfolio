@@ -59,7 +59,7 @@ const projects: Project[] = [
     title: 'Map Generator',
     category: 'game',
     categoryLabel: 'Game Development',
-    image: '/assets/gifs/Generation.gif',
+    image: '/assets/gifs/Generation.mp4',
     description: 'Procedural terrain generation system implemented in Unity using C#. It generates realistic and diverse terrains using noise functions and chunk based loading, allowing for efficient rendering and exploration of vast landscapes.',
     technologies: ['Unity', 'C#', 'Procedural Generation', 'Perlin Noise'],
     githubUrl: 'https://github.com/YegorCherov/MapGenerator'
@@ -69,7 +69,7 @@ const projects: Project[] = [
     title: 'WaterMark Detector',
     category: 'ai',
     categoryLabel: 'AI/ML',
-    image: '/assets/gifs/Water-Gif.gif',
+    image: '/assets/gifs/Water-Gif.mp4',
     description: 'Developed Advanced Watermark Detector by training a specific model using 10,000+ Images from multiple different Datasets.',
     technologies: ['Python', 'OpenCV', 'Computer Vision', 'Machine Learning'],
     githubUrl: 'https://github.com/YegorCherov/WatermarkDetector'
@@ -99,7 +99,7 @@ const projects: Project[] = [
     title: 'Face Tracker',
     category: 'ai',
     categoryLabel: 'Computer Vision',
-    image: '/assets/gifs/FaceTrackerExampleCropped.gif',
+    image: '/assets/gifs/FaceTrackerExampleCropped.mp4',
     description: 'Real time face tracking system using computer vision techniques to detect and track facial features.',
     technologies: ['Python', 'OpenCV', 'Computer Vision', 'Machine Learning'],
     githubUrl: 'https://github.com/YegorCherov'
@@ -109,7 +109,7 @@ const projects: Project[] = [
     title: 'RTS Mechanics',
     category: 'game',
     categoryLabel: 'Game Development',
-    image: '/assets/gifs/RTSMechanics.gif',
+    image: '/assets/gifs/RTSMechanics.mp4',
     description: 'Developed Basic and Advanced RTS Mechanics and Controls for real time strategy games.',
     technologies: ['Unity', 'C#', 'Game Development'],
     githubUrl: 'https://github.com/YegorCherov/EmpireToEnd'
@@ -119,7 +119,7 @@ const projects: Project[] = [
     title: 'Basic Units',
     category: 'game',
     categoryLabel: 'Game Development',
-    image: '/assets/gifs/Hwacha.gif',
+    image: '/assets/gifs/Hwacha.mp4',
     description: 'Developed basic units like Catapult, Hwacha, Knight, Archer, Builder including their respective mechanics.',
     technologies: ['Unity', 'C#', 'Game Development'],
     githubUrl: 'https://github.com/YegorCherov/EmpireToEnd'
@@ -129,7 +129,7 @@ const projects: Project[] = [
     title: 'Infinite Parallax Background',
     category: 'game',
     categoryLabel: 'Game Development',
-    image: '/assets/gifs/ParallaxBackground.gif',
+    image: '/assets/gifs/ParallaxBackground.mp4',
     description: 'Developed a script that controls 3 different backgrounds, by defining different speeds and checking the position of the camera/player, creating an infinite parallax background.',
     technologies: ['Unity', 'C#', 'Game Development'],
     githubUrl: 'https://github.com/YegorCherov/EmpireToEnd'
