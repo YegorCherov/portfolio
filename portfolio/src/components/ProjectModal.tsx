@@ -21,7 +21,6 @@ const ProjectModal: React.FC<ProjectModalProps> = ({ project, isActive, onClose 
 
     if (isActive) {
       previouslyFocusedElement.current = document.activeElement as HTMLElement;
-      // Directly set overflow — more reliable than a CSS class
       document.body.style.overflow = 'hidden';
       window.addEventListener('keydown', handleEsc);
 
@@ -41,6 +40,9 @@ const ProjectModal: React.FC<ProjectModalProps> = ({ project, isActive, onClose 
   const handleBackdropClick = (e: React.MouseEvent) => {
     if (e.target === e.currentTarget) onClose();
   };
+
+  // Determine the image source based on active state
+  const imageSrc = isActive && project.gifUrl ? project.gifUrl : project.image;
 
   const modal = (
     <div
@@ -73,7 +75,12 @@ const ProjectModal: React.FC<ProjectModalProps> = ({ project, isActive, onClose 
         {project.stlUrl && isActive ? (
           <STLViewer urls={project.stlUrl} />
         ) : (
-          <img src={project.image} alt={project.title} className="portfolio__modal-img" />
+          <img 
+            src={imageSrc} 
+            alt={project.title} 
+            className="portfolio__modal-img" 
+            loading="lazy"
+          />
         )}
         <p className="portfolio__modal-desc">{project.description}</p>
         <div className="portfolio__modal-list">
@@ -98,8 +105,6 @@ const ProjectModal: React.FC<ProjectModalProps> = ({ project, isActive, onClose 
     </div>
   );
 
-  // Render into document.body so position:fixed works from the viewport,
-  // not relative to the portfolio section
   return createPortal(modal, document.body);
 };
 
