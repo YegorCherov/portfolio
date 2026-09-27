@@ -14,11 +14,23 @@ export interface Project {
 
 const projects: Project[] = [
   {
+    id: 'talon',
+    title: 'Talon - Monodrone',
+    category: '3d',
+    categoryLabel: '3D Model',
+    image: '/assets/images/models_images/Talon.jpeg',
+    stlUrl: '/assets/models/Talon.stl',
+    description: 'A single-motor ducted monodrone that utilizes thrust vectoring for flight control. It features eight curved stator vanes inside the duct to passively cancel out motor torque, four servo-actuated control vanes positioned in the prop wash for pitch, roll, and yaw control, and a bottom-mounted battery pod to keep the center of gravity directly aligned with the thrust line.',
+    technologies: ['Fusion 360', '3D Printing', 'Mechanical Design', 'Aerodynamics', 'Robotics'],
+    githubUrl: 'https://github.com/YegorCherov/Talon'
+  },
+  {
     id: 'apexPayloadDropper',
     title: 'Apex FPV Payload Dropper',
     category: '3d',
     categoryLabel: '3D Model',
-    image: '/assets/images/Apex.jpeg',
+    image: '/assets/images/models_images/Apex.jpeg',
+    stlUrl: '/assets/models/Apex.stl',
     description: 'I designed a completely mechanical sequential payload dropper for FPV drones. By sequencing four Geneva mechanisms along a single shaft, it drops up to four independent payloads using just one servo and a 180 degree sweep. Instead of being locked to specific shapes, it accepts almost anything you can strap in with zip ties.',
     technologies: ['Fusion 360', '3D Printing', 'Mechanical Design', 'Engineering'],
     githubUrl: 'https://github.com/YegorCherov/Apex'
